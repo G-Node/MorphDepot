@@ -3,6 +3,7 @@ __author__ = 'philipp'
 from django.contrib import admin
 from django_morphdepot.morphdepot.models import *
 
+
 ########################
 # Experimental Meta-Data
 ########################
@@ -19,6 +20,7 @@ class NeuronInline(admin.StackedInline):
 class NeuronTypeAdmin(admin.ModelAdmin):
     fields = ['type', 'comment']
 
+
 class MicroscopeSlideInline(admin.TabularInline):
     # Todo: improve integration within ExperimentAdmin
     fields = ['label', 'comment']
@@ -33,13 +35,14 @@ class AnimalInline(admin.TabularInline):
     inlines = [MicroscopeSlideInline]
 
 
-class MicroscopeSlideAdmin(admin.ModelAdmin):
-    fields = ['label', 'experiment']
-    # inlines = [NeuronInline]
+# class MicroscopeSlideAdmin(admin.ModelAdmin):
+#     fields = ['label', 'experiment']
+#     # inlines = [NeuronInline]
 
 
 class AnimalAdmin(admin.ModelAdmin):
     fields = ['label', 'age', 'animal_type', 'age_uncertainty', 'comment']
+    list_display = ('ctime', 'mtime', 'comment')
     # inlines = [MicroscopeSlideInline]
 
 
@@ -82,8 +85,24 @@ class UploadedFileAdmin(admin.ModelAdmin):
     really_delete_selected.short_description = "Delete selected entries"
 
 
+class UploadedFilesInline(admin.TabularInline):
+    # fields = ['filefolder', 'file']
+    model = UploadedFile
+    extra = 0
+
+
+class UploadedFileInline(admin.TabularInline):
+    # fields = ['filefolder', 'file']
+    model = UploadedFile
+    max_num = 1
+    extra = 0
+
+
 class FileFolderAdmin(admin.ModelAdmin):
     actions=['really_delete_selected']
+    inlines = [UploadedFilesInline]
+    fields = ['label', 'comment']
+    list_display = ['path', 'checksum', 'mtime', 'ctime']
 
     def get_actions(self, request):
         actions = super(FileFolderAdmin, self).get_actions(request)
@@ -106,20 +125,36 @@ class FileFolderAdmin(admin.ModelAdmin):
 # Digital Representation
 ########################
 
+# toOne
 class NeuronDNRInline(admin.TabularInline):
+    verbose_name = "Neuron" # see also: 'related_name' at Neuron_DigitalNeuronRepresentation_Maps
+    verbose_name_plural = "Related Neuron"
+    max_num = 1
+    model = Neuron_DigitalNeuronRepresentation_Maps
+    extra = 0
+
+# toMany
+class NeuronsDNRInline(admin.TabularInline):
+    verbose_name = "Neuron" # see also: 'related_name' at Neuron_DigitalNeuronRepresentation_Maps
+    verbose_name_plural = "Related Neurons"
     model = Neuron_DigitalNeuronRepresentation_Maps
     extra = 0
 
 
 class DigitalNeuronRepresentationAdmin(admin.ModelAdmin):
+    verbose_name = "test"
     fields = ['label']
     inlines = [NeuronDNRInline]
 
 
 class SegmentationAdmin(admin.ModelAdmin):
     fields = ['label']
-    inlines = [NeuronInline]
+    inlines = [NeuronDNRInline, UploadedFileInline]
 
+
+class SegmentationSigenAdmin(admin.ModelAdmin):
+    fields = ['label', 'd_parameter', 'v_parameter', 'c_parameter', 's_parameter']
+    inlines = [NeuronDNRInline]
 
 # class MicroscopeImageStackAdmin(admin.ModelAdmin):
 #     fields = ('label', 'microscope', 'digitalneuronrepresentation', 'lense', 'zoom', 'laser_color', 'gain', 'laser_config',
@@ -138,4 +173,4 @@ admin.site.register(Animal, AnimalAdmin)
 admin.site.register(AnimalType, AnimalTypeAdmin)
 admin.site.register(DigitalNeuronRepresentation, DigitalNeuronRepresentationAdmin)
 admin.site.register(Segmentation, SegmentationAdmin)
-admin.site
+admin.site.register(SegmentationSigen, SegmentationSigenAdmin)

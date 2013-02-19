@@ -17,9 +17,9 @@ http://david.feinzeig.com/blog/2012/03/01/how-to-add-a-uuid-field-in-django-usin
 #######################
 
 class Identity(models.Model):
-    uuid = UUIDField(primary_key=True, version=4)
-    ctime = models.DateTimeField('created', auto_now_add=True, blank=False)
-    mtime = models.DateTimeField('modified', auto_now=True, blank=False)
+    uuid = UUIDField(primary_key=True, version=4) #Not editable with Django.admin
+    ctime = models.DateTimeField('created', auto_now_add=True, blank=False) # Not editable with Django.admin (auto_now_add=True!)
+    mtime = models.DateTimeField('modified', auto_now=True, blank=False)    # Not editable with Django.admin (auto_now=True!)
     comment = models.TextField(default="", blank=True)
 
     class Meta:
@@ -34,7 +34,6 @@ class MicroscopeConfig(models.Model):
     laser_config = models.CharField('e.g. gain/time/percentage', max_length=64)
     voxel_size_x = models.DecimalField('x [nm] (voxel-size)', max_digits=7, decimal_places=2)
     voxel_size_y = models.DecimalField('y [nm] (voxel-size)', max_digits=7, decimal_places=2)
-
 
     class Meta:
         abstract = True
@@ -116,10 +115,10 @@ class Neuron(Identity):
 
 class FileFolder(Identity):
     label = models.CharField(unique=True, max_length=64)
-    checksum = models.CharField(max_length=64)
-    path = models.CharField(max_length=256)
+    checksum = models.CharField(max_length=64, default="automatically set on save") #TODO: implement with function-call on update
+    path = models.CharField(max_length=256, default="automatically set on save")
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs): # Replace by Signal!
         super(FileFolder, self).save(*args, **kwargs)
         hash = hashlib.sha1()
         for file in self.uploadedfile_set.all():
@@ -143,7 +142,8 @@ class FileFolder(Identity):
 
 
 class UploadedFile(models.Model):
-    file = models.FileField(upload_to=utils.get_upload_path)
+    # file = models.FileField(upload_to=utils.get_upload_path)
+    file = models.ImageField(upload_to=utils.get_upload_path)
     filefolder = models.ForeignKey(FileFolder)
     filesize = models.PositiveIntegerField(blank=True, null=True, editable=False)
     checksum = models.CharField(max_length=32, blank=True, editable=False)
@@ -151,7 +151,7 @@ class UploadedFile(models.Model):
     class Meta:
         ordering = ['file']
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs): # TODO: checksum is not updated by Django.admin
         print "********************* in save *************************"
         super(UploadedFile, self).save(*args, **kwargs)
         f = default_storage.open(self.file, 'rb')
@@ -186,11 +186,22 @@ class UploadedFile(models.Model):
         filename = os.path.basename(self.file.name)
         return filename
 
+# Signals
+# Example: http://lightbird.net/dbe/forum3.html
+from django.db.models.signals import post_save
+
+def update_filefolder(sender, **kwargs):
+    file = kwargs["instance"]
+    file.filefolder.save()
+
+post_save.connect(update_filefolder, sender=UploadedFile)
+
 
 # Raw data classes
 
-class DigitalNeuronRepresentation(FileFolder):
-    neurons = models.ManyToManyField(Neuron, through='Neuron_DigitalNeuronRepresentation_Maps')
+class DigitalNeuronRepresentation(Identity):
+    neurons = models.ManyToManyField(Neuron, through='Neuron_DigitalNeuronRepresentation_Maps', related_name="Neuron")
+    filefolder = models.OneToOneField(FileFolder)
 
 
 class Neuron_DigitalNeuronRepresentation_Maps(models.Model):
@@ -212,9 +223,11 @@ class MicroscopeImage(DigitalNeuronRepresentation, MicroscopeConfig):
 
 
 class Segmentation(DigitalNeuronRepresentation):
-    # neurons = models.ManyToManyField(Neuron, through='Neuron_DigitalNeuronRepresentation_Maps')
     dye = models.CharField(max_length=64)
     method = models.TextField()
+
+    def __unicode__(self):
+        return "Segmentation of Neuron '%s'" %(self.neurons.all()[0]) # TODO: check 'one()'
 
 
 class SegmentationSigen(Segmentation):
