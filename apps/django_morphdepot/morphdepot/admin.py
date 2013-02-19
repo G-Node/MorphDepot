@@ -3,6 +3,12 @@ __author__ = 'philipp'
 from django.contrib import admin
 from django_morphdepot.morphdepot.models import *
 
+########################
+# Experimental Meta-Data
+########################
+class NeuronAdmin(admin.ModelAdmin):
+    fields = ['label', 'type', 'microscope_slide', 'comment']
+
 
 class NeuronInline(admin.StackedInline):
     fields = ['label', 'type', 'microscope_slide']
@@ -10,8 +16,14 @@ class NeuronInline(admin.StackedInline):
     extra = 0
 
 
+class NeuronTypeAdmin(admin.ModelAdmin):
+    fields = ['type', 'comment']
+
 class MicroscopeSlideInline(admin.TabularInline):
-    fields = ['label', 'animal']
+    # Todo: improve integration within ExperimentAdmin
+    fields = ['label', 'comment']
+    model = MicroscopeSlide
+    extra = 0
 
 
 class AnimalInline(admin.TabularInline):
@@ -22,25 +34,33 @@ class AnimalInline(admin.TabularInline):
 
 
 class MicroscopeSlideAdmin(admin.ModelAdmin):
-    fields = ['label', 'animal']
-    inlines = [NeuronInline]
+    fields = ['label', 'experiment']
+    # inlines = [NeuronInline]
 
 
 class AnimalAdmin(admin.ModelAdmin):
-    fields = ['label', 'species', 'age', 'age_uncertainty']
-    inlines = [MicroscopeSlideInline]
+    fields = ['label', 'age', 'animal_type', 'age_uncertainty', 'comment']
+    # inlines = [MicroscopeSlideInline]
 
 
-class ExperimenterAdmin(admin.ModelAdmin):
+class AnimalTypeAdmin(admin.ModelAdmin):
+    fields = ['notation', 'comment']
+
+
+class ScientistAdmin(admin.ModelAdmin):
     fields = ['title', 'last_name', 'first_name', 'middle_name', 'affiliations', 'comment']
     list_display = ('fullname', 'affiliations', 'ctime', 'mtime')
 
 
 class ExperimentAdmin(admin.ModelAdmin):
-    fields = ['label', 'experimenter', 'date', 'lab_book_entry', 'comment']
-    list_display = ('label', 'date', 'experimenter')
-    inlines = [AnimalInline]
+    fields = ['label', 'scientist', 'animal', 'date', 'lab_book_entry', 'comment']
+    list_display = ('label', 'date', 'scientist')
+    inlines = [MicroscopeSlideInline]
 
+
+#############
+# File Upload
+#############
 
 class UploadedFileAdmin(admin.ModelAdmin):
     actions=['really_delete_selected']
@@ -60,7 +80,6 @@ class UploadedFileAdmin(admin.ModelAdmin):
             message_bit = "%s uploded files were" % queryset.count()
         self.message_user(request, "%s successfully deleted." % message_bit)
     really_delete_selected.short_description = "Delete selected entries"
-
 
 
 class FileFolderAdmin(admin.ModelAdmin):
@@ -83,17 +102,40 @@ class FileFolderAdmin(admin.ModelAdmin):
     really_delete_selected.short_description = "Delete selected entries"
 
 
-class MicroscopeImageStackAdmin(admin.ModelAdmin):
-    fields = ('label', 'microscope', 'microscope_slide', 'lense', 'zoom', 'laser_color', 'gain', 'laser_config',
-        ('voxel_size_x', 'voxel_size_y', 'voxel_size_z'),
-        )
+########################
+# Digital Representation
+########################
+
+class NeuronDNRInline(admin.TabularInline):
+    model = Neuron_DigitalNeuronRepresentation_Maps
+    extra = 0
 
 
-admin.site.register(Experimenter, ExperimenterAdmin)
+class DigitalNeuronRepresentationAdmin(admin.ModelAdmin):
+    fields = ['label']
+    inlines = [NeuronDNRInline]
+
+
+class SegmentationAdmin(admin.ModelAdmin):
+    fields = ['label']
+    inlines = [NeuronInline]
+
+
+# class MicroscopeImageStackAdmin(admin.ModelAdmin):
+#     fields = ('label', 'microscope', 'digitalneuronrepresentation', 'lense', 'zoom', 'laser_color', 'gain', 'laser_config',
+#         ('voxel_size_x', 'voxel_size_y', 'voxel_size_z'),
+#         )
+
+admin.site.register(Scientist, ScientistAdmin)
 admin.site.register(Experiment, ExperimentAdmin)
-admin.site.register(MicroscopeSlide, MicroscopeSlideAdmin)
-admin.site.register(Neuron)
+#admin.site.register(MicroscopeSlide)#, MicroscopeSlideAdmin)
+admin.site.register(Neuron, NeuronAdmin)
+admin.site.register(NeuronType, NeuronTypeAdmin)
 admin.site.register(FileFolder, FileFolderAdmin)
 admin.site.register(UploadedFile, UploadedFileAdmin)
-admin.site.register(MicroscopeImageStack, MicroscopeImageStackAdmin)
-#admin.site.register(Animal, AnimalAdmin)
+# admin.site.register(MicroscopeImageStack, MicroscopeImageStackAdmin)
+admin.site.register(Animal, AnimalAdmin)
+admin.site.register(AnimalType, AnimalTypeAdmin)
+admin.site.register(DigitalNeuronRepresentation, DigitalNeuronRepresentationAdmin)
+admin.site.register(Segmentation, SegmentationAdmin)
+admin.site

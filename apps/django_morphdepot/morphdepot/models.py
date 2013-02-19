@@ -12,6 +12,9 @@ Short UUID-Doku:
 http://david.feinzeig.com/blog/2012/03/01/how-to-add-a-uuid-field-in-django-using-django-extensions-and-how-to-make-it-a-read-only-admin-field/
 """
 
+#######################
+# MorphDepot - Metadata
+#######################
 
 class Identity(models.Model):
     uuid = UUIDField(primary_key=True, version=4)
@@ -23,7 +26,7 @@ class Identity(models.Model):
         abstract = True
 
 
-class MicroscopeInfo(models.Model):
+class MicroscopeConfig(models.Model):
     zoom = models.DecimalField(max_digits=5, decimal_places=2)
     lense = models.DecimalField(max_digits=5, decimal_places=2)
     gain = models.DecimalField(max_digits=5, decimal_places=2)
@@ -37,12 +40,12 @@ class MicroscopeInfo(models.Model):
         abstract = True
 
 
-class Experimenter(Identity):
+class Scientist(Identity):
     first_name = models.CharField(max_length=64)
     last_name = models.CharField(max_length=64)
     middle_name = models.CharField(max_length=64, blank=True)
-    title = models.CharField(max_length=16)
-    affiliations = models.CharField(max_length=128)
+    title = models.CharField(max_length=16, blank=True)
+    affiliations = models.CharField(max_length=128, blank=True)
 
     def __unicode__(self):
         return self.fullname
@@ -50,16 +53,6 @@ class Experimenter(Identity):
     @property
     def fullname(self):
         return u"%s %s %s" % (self.title, self.first_name, self.last_name)
-
-
-class Experiment(Identity):
-    label = models.CharField(unique=True, max_length=64)
-    date = models.DateField()
-    experimenter = models.ForeignKey(Experimenter)
-    lab_book_entry = models.TextField()
-
-    def __unicode__(self):
-        return self.label
 
 
 class AnimalType(Identity):
@@ -71,12 +64,21 @@ class AnimalType(Identity):
 
 class Animal(Identity):
     label = models.CharField(unique=True, max_length=64)
-    experiment = models.ForeignKey(Experiment)
     animal_type = models.ForeignKey(AnimalType)
     age = models.BigIntegerField("age in days [P]") #age in days
     age_uncertainty = models.CharField(max_length=64, blank=True)
-    species = models.CharField(max_length=64)
 
+    def __unicode__(self):
+        return self.label
+
+
+
+class Experiment(Identity):
+    label = models.CharField(unique=True, max_length=64)
+    date = models.DateField()
+    scientist = models.ForeignKey(Scientist)
+    animal = models.OneToOneField(Animal)
+    lab_book_entry = models.TextField()
 
     def __unicode__(self):
         return self.label
@@ -84,7 +86,7 @@ class Animal(Identity):
 
 class MicroscopeSlide(Identity):
     label = models.CharField(unique=True, max_length=64)
-    animal = models.ForeignKey(Animal)
+    experiment = models.ForeignKey(Experiment)
 
     def __unicode__(self):
         return self.label
@@ -92,6 +94,9 @@ class MicroscopeSlide(Identity):
 
 class NeuronType(Identity):
     type = models.CharField(unique=True, max_length=64)
+
+    def __unicode__(self):
+        return self.type
 
 
 class Neuron(Identity):
@@ -102,6 +107,12 @@ class Neuron(Identity):
     def __unicode__(self):
         return self.label
 
+
+#####################
+# MorphDepot Raw Data
+#####################
+
+# File(folder) Upload
 
 class FileFolder(Identity):
     label = models.CharField(unique=True, max_length=64)
@@ -176,24 +187,42 @@ class UploadedFile(models.Model):
         return filename
 
 
+# Raw data classes
+
+class DigitalNeuronRepresentation(FileFolder):
+    neurons = models.ManyToManyField(Neuron, through='Neuron_DigitalNeuronRepresentation_Maps')
+
+
+class Neuron_DigitalNeuronRepresentation_Maps(models.Model):
+    neuron = models.ForeignKey(Neuron)
+    digital_neural_representation = models.ForeignKey(DigitalNeuronRepresentation)
+
+
 class Microscope(Identity):
     label = models.CharField(max_length=64)
 
 
-class MicroscopeImageStack(MicroscopeInfo):
-    label = models.CharField(max_length=64)
+class MicroscopeImageStack(DigitalNeuronRepresentation, MicroscopeConfig):
     microscope = models.ForeignKey(Microscope)
-    microscope_slide = models.ForeignKey(MicroscopeSlide)
     voxel_size_z = models.DecimalField('z [nm] (voxel-size)', max_digits=7, decimal_places=2)
 
 
-class MicroscopeImage(FileFolder, MicroscopeInfo):
+class MicroscopeImage(DigitalNeuronRepresentation, MicroscopeConfig):
     microscope = models.ForeignKey(Microscope)
-    microscope_slide = models.ForeignKey(MicroscopeSlide)
 
 
-class Morphology(models.Model):
+class Segmentation(DigitalNeuronRepresentation):
+    # neurons = models.ManyToManyField(Neuron, through='Neuron_DigitalNeuronRepresentation_Maps')
     dye = models.CharField(max_length=64)
-    experimental_method = models.TextField()
-    reconstruction_method = models.TextField()
-    neuron = models.ForeignKey(Neuron)
+    method = models.TextField()
+
+
+class SegmentationSigen(Segmentation):
+    d_parameter = models.DecimalField(max_digits=5, decimal_places=2)
+    v_parameter = models.DecimalField(max_digits=5, decimal_places=2)
+    c_parameter = models.DecimalField(max_digits=5, decimal_places=2)
+    s_parameter = models.DecimalField(max_digits=5, decimal_places=2)
+
+
+class MicroscopeImageStackMDP(MicroscopeImageStack):
+    information = models.TextField()
