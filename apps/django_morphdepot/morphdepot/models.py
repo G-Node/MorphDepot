@@ -55,10 +55,10 @@ class Scientist(Identity):
 
 
 class AnimalType(Identity):
-    notation = models.CharField(unique=True, max_length=64)
+    label = models.CharField(unique=True, max_length=64)
 
     def __unicode__(self):
-        return self.notation
+        return self.label
 
 
 class Animal(Identity):
@@ -69,7 +69,6 @@ class Animal(Identity):
 
     def __unicode__(self):
         return self.label
-
 
 
 class Experiment(Identity):
@@ -92,10 +91,10 @@ class MicroscopeSlide(Identity):
 
 
 class NeuronType(Identity):
-    type = models.CharField(unique=True, max_length=64)
+    label = models.CharField(unique=True, max_length=64)
 
     def __unicode__(self):
-        return self.type
+        return self.label
 
 
 class Neuron(Identity):
@@ -114,6 +113,9 @@ class Neuron(Identity):
 # File(folder) Upload
 
 class FileFolder(Identity):
+    """
+    TODO: How to add/migrate existing FileFolders?
+    """
     label = models.CharField(unique=True, max_length=64)
     checksum = models.CharField(max_length=64, default="automatically set on save") #TODO: implement with function-call on update
     path = models.CharField(max_length=256, default="automatically set on save")
@@ -138,7 +140,7 @@ class FileFolder(Identity):
         return len(self.uploadedfile_set.all())
 
     def __unicode__(self):
-        return "%s with %s files" %(self.path, self.n_files)
+        return self.label
 
 
 class UploadedFile(models.Model):
@@ -200,8 +202,12 @@ post_save.connect(update_filefolder, sender=UploadedFile)
 # Raw data classes
 
 class DigitalNeuronRepresentation(Identity):
+    label = models.CharField(unique=True, max_length=64)
     neurons = models.ManyToManyField(Neuron, through='Neuron_DigitalNeuronRepresentation_Maps', related_name="Neuron")
     filefolder = models.OneToOneField(FileFolder)
+
+    def __unicode__(self):
+        return self.label
 
 
 class Neuron_DigitalNeuronRepresentation_Maps(models.Model):
@@ -211,6 +217,9 @@ class Neuron_DigitalNeuronRepresentation_Maps(models.Model):
 
 class Microscope(Identity):
     label = models.CharField(max_length=64)
+
+    def __unicode__(self):
+        return self.label
 
 
 class MicroscopeImageStack(DigitalNeuronRepresentation, MicroscopeConfig):
@@ -223,11 +232,7 @@ class MicroscopeImage(DigitalNeuronRepresentation, MicroscopeConfig):
 
 
 class Segmentation(DigitalNeuronRepresentation):
-    dye = models.CharField(max_length=64)
-    method = models.TextField()
-
-    def __unicode__(self):
-        return "Segmentation of Neuron '%s'" %(self.neurons.all()[0]) # TODO: check 'one()'
+    pass
 
 
 class SegmentationSigen(Segmentation):

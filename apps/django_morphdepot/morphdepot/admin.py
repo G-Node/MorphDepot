@@ -18,8 +18,11 @@ class NeuronInline(admin.StackedInline):
 
 
 class NeuronTypeAdmin(admin.ModelAdmin):
-    fields = ['type', 'comment']
+    fields = ['label', 'comment']
 
+
+class MicroscopeAdmin(admin.ModelAdmin):
+    fields = ['label', 'comment']
 
 class MicroscopeSlideInline(admin.TabularInline):
     # Todo: improve integration within ExperimentAdmin
@@ -35,9 +38,8 @@ class AnimalInline(admin.TabularInline):
     inlines = [MicroscopeSlideInline]
 
 
-# class MicroscopeSlideAdmin(admin.ModelAdmin):
-#     fields = ['label', 'experiment']
-#     # inlines = [NeuronInline]
+class MicroscopeSlideAdmin(admin.ModelAdmin):
+    fields = ['label', 'experiment', 'comment']
 
 
 class AnimalAdmin(admin.ModelAdmin):
@@ -47,7 +49,7 @@ class AnimalAdmin(admin.ModelAdmin):
 
 
 class AnimalTypeAdmin(admin.ModelAdmin):
-    fields = ['notation', 'comment']
+    fields = ['label', 'comment']
 
 
 class ScientistAdmin(admin.ModelAdmin):
@@ -131,7 +133,7 @@ class NeuronDNRInline(admin.TabularInline):
     verbose_name_plural = "Related Neuron"
     max_num = 1
     model = Neuron_DigitalNeuronRepresentation_Maps
-    extra = 0
+    extra = 1
 
 # toMany
 class NeuronsDNRInline(admin.TabularInline):
@@ -148,29 +150,33 @@ class DigitalNeuronRepresentationAdmin(admin.ModelAdmin):
 
 
 class SegmentationAdmin(admin.ModelAdmin):
-    fields = ['label']
-    inlines = [NeuronDNRInline, UploadedFileInline]
+    fields = ['label', 'filefolder', 'comment']
+    inlines = [NeuronDNRInline]
 
 
 class SegmentationSigenAdmin(admin.ModelAdmin):
     fields = ['label', 'd_parameter', 'v_parameter', 'c_parameter', 's_parameter']
     inlines = [NeuronDNRInline]
 
-# class MicroscopeImageStackAdmin(admin.ModelAdmin):
-#     fields = ('label', 'microscope', 'digitalneuronrepresentation', 'lense', 'zoom', 'laser_color', 'gain', 'laser_config',
-#         ('voxel_size_x', 'voxel_size_y', 'voxel_size_z'),
-#         )
+
+class MicroscopeImageStackAdmin(admin.ModelAdmin):
+    fields = ('label', 'microscope', 'lense', 'zoom', 'laser_color', 'gain', 'laser_config',
+        ('voxel_size_x', 'voxel_size_y', 'voxel_size_z'),
+        )
+    inlines = [NeuronsDNRInline]
+
 
 admin.site.register(Scientist, ScientistAdmin)
 admin.site.register(Experiment, ExperimentAdmin)
-#admin.site.register(MicroscopeSlide)#, MicroscopeSlideAdmin)
+admin.site.register(Microscope, MicroscopeAdmin)
+admin.site.register(MicroscopeSlide, MicroscopeSlideAdmin)
 admin.site.register(Neuron, NeuronAdmin)
 admin.site.register(NeuronType, NeuronTypeAdmin)
 admin.site.register(FileFolder, FileFolderAdmin)
 admin.site.register(UploadedFile, UploadedFileAdmin)
-# admin.site.register(MicroscopeImageStack, MicroscopeImageStackAdmin)
+admin.site.register(MicroscopeImageStack, MicroscopeImageStackAdmin)
 admin.site.register(Animal, AnimalAdmin)
 admin.site.register(AnimalType, AnimalTypeAdmin)
-admin.site.register(DigitalNeuronRepresentation, DigitalNeuronRepresentationAdmin)
+#admin.site.register(DigitalNeuronRepresentation, DigitalNeuronRepresentationAdmin)
 admin.site.register(Segmentation, SegmentationAdmin)
 admin.site.register(SegmentationSigen, SegmentationSigenAdmin)

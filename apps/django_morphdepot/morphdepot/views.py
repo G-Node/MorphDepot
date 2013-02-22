@@ -21,10 +21,11 @@ class SimpleFileForm(forms.Form):
     file = forms.Field(widget=forms.FileInput, required=False)
 
 
-def add_filefolder(file_list, subfolder=""):
+def add_filefolder(request):#file_list):
+    file_list = request.FILES.getlist('form_files')
+    form_fields = request.POST
     file_list.sort(key=str) #PR: sort list by file names
-    #rel_path_folder = os.path.join(FILEFOLDER, subfolder)
-    new_file_folder = FileFolder()
+    new_file_folder = FileFolder(label=form_fields['label'])
     new_file_folder.save() #PR; save to generate uuid
 
     folder_sha1 = hashlib.sha1()
@@ -53,7 +54,7 @@ def directupload(request):
     if request.method == 'POST':
         #print request.FILES
         #if form.is_valid():
-        add_filefolder(request.FILES.getlist('form_files'))
+        add_filefolder(request)#.FILES.getlist('form_files'))
         # Redirect to the document list after POST
         return HttpResponse("OK") #Redirect(reverse('django_morphdepot.views.directupload'))
     else:

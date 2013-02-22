@@ -1,7 +1,13 @@
 {% block body  %}
      <h1>Upload a file</h1>
      <form action="" method="post" enctype="multipart/form-data">
+         <p>Label:<br>
+         <input type="text" name="label" size="32" maxlength="64"/>
+         </p>
+         <p>Files:<br>
          <input type="file" name="form_files" multiple="" id="form_files"/>
+         <br><br>
          <input type="submit" value="Upload" />
+         </p>
      </form>
 {% endblock %}
