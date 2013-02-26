@@ -11,11 +11,13 @@ import utils
 Short UUID-Doku:
 http://david.feinzeig.com/blog/2012/03/01/how-to-add-a-uuid-field-in-django-using-django-extensions-and-how-to-make-it-a-read-only-admin-field/
 """
-# from django_extensions.db.fields import UUIDField
+from django_extensions.db.fields import UUIDField
 # Broken, see: https://github.com/django-extensions/django-extensions/issues/282
-import uuid
+# import uuid as uuid_package # to avoid confusion with attribute `uuid`
+from uuid import uuid4
+
 def make_uuid():
-    return str(uuid.uuid4())
+    return str(uuid4())
 
 # ***************End - UUID *****************************
 
@@ -25,23 +27,11 @@ def make_uuid():
 
 class Identity(models.Model):
     # uuid = UUIDField(primary_key=True, version=4) #Not editable with Django.admin
-    uuid = models.CharField(max_length=36, primary_key=True, default=make_uuid)
+    id = models.AutoField(primary_key=True)
+    uuid = models.CharField(max_length=36, default=make_uuid)
     ctime = models.DateTimeField('created', auto_now_add=True, blank=False) # Not editable with Django.admin (auto_now_add=True!)
     mtime = models.DateTimeField('modified', auto_now=True, blank=False)    # Not editable with Django.admin (auto_now=True!)
     comment = models.TextField(default="", blank=True)
-
-    class Meta:
-        abstract = True
-
-
-class MicroscopeConfig(models.Model):
-    zoom = models.DecimalField(max_digits=5, decimal_places=2)
-    lense = models.DecimalField(max_digits=5, decimal_places=2)
-    gain = models.DecimalField(max_digits=5, decimal_places=2)
-    laser_color = models.CharField(max_length=64)
-    laser_config = models.CharField('e.g. gain/time/percentage', max_length=64)
-    voxel_size_x = models.DecimalField('x [nm] (voxel-size)', max_digits=7, decimal_places=2)
-    voxel_size_y = models.DecimalField('y [nm] (voxel-size)', max_digits=7, decimal_places=2)
 
     class Meta:
         abstract = True
@@ -53,13 +43,6 @@ class Scientist(Identity):
     middle_name = models.CharField(max_length=64, blank=True)
     title = models.CharField(max_length=16, blank=True)
     affiliations = models.CharField(max_length=128, blank=True)
-
-    def save(self, *args, **kwargs): # Replace by Signal!
-        print "self.uuid: ", self.uuid
-        print "self.mtime", self.mtime
-        super(Scientist, self).save(*args, **kwargs)
-        print "self.uuid: ", self.uuid
-        print "self.mtime", self.mtime
 
     def __unicode__(self):
         return self.fullname
@@ -134,6 +117,16 @@ class FileFolder(Identity):
     label = models.CharField(unique=True, max_length=64)
     checksum = models.CharField(max_length=64, default="automatically set on save") #TODO: implement with function-call on update
     path = models.CharField(max_length=256, default="automatically set on save")
+
+    def save(self, *args, **kwargs): # Replace by Signal!
+        if not self.uuid:
+            self.uuid = make_uuid()
+        hash = hashlib.sha1()
+        for file in self.uploadedfile_set.all():
+            hash.update(file.checksum)
+        self.checksum = hash.hexdigest()
+        self.path = os.path.join(utils.ROOT_FILEFOLDERS, self.uuid)
+        super(FileFolder, self).save(*args, **kwargs)
 
     def delete(self, *args, **kwargs):
         for file in self.uploadedfile_set.all():
@@ -239,6 +232,19 @@ class Microscope(Identity):
 
     def __unicode__(self):
         return self.label
+
+
+class MicroscopeConfig(models.Model):
+    zoom = models.DecimalField(max_digits=5, decimal_places=2)
+    lense = models.DecimalField(max_digits=5, decimal_places=2)
+    gain = models.DecimalField(max_digits=5, decimal_places=2)
+    laser_color = models.CharField(max_length=64)
+    laser_config = models.CharField('e.g. gain/time/percentage', max_length=64)
+    voxel_size_x = models.DecimalField('x [nm] (voxel-size)', max_digits=7, decimal_places=2)
+    voxel_size_y = models.DecimalField('y [nm] (voxel-size)', max_digits=7, decimal_places=2)
+
+    class Meta:
+        abstract = True
 
 
 class MicroscopeImageStack(DigitalNeuronRepresentation, MicroscopeConfig):

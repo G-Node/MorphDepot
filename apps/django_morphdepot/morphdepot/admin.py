@@ -37,7 +37,7 @@ class MicroscopeAdmin(admin.ModelAdmin):
     list_display = ('label', 'comment', 'mtime', 'ctime', 'uuid')
 
 
-class MicroscopeSlideInline(admin.StackedInline):
+class MicroscopeSlideInline(admin.TabularInline):
     # Todo: improve integration within ExperimentAdmin
     fields = ['label', 'comment', 'uuid']
     readonly_fields=('uuid',)
@@ -131,7 +131,7 @@ class FileFolderAdmin(admin.ModelAdmin):
     actions=['really_delete_selected']
     inlines = [UploadedFilesInline]
     fields = ['label', 'comment']
-    list_display = ['path', 'checksum', 'uuid', 'mtime', 'ctime']
+    list_display = ['label', 'path', 'checksum', 'uuid', 'mtime', 'ctime']
 
     def get_actions(self, request):
         actions = super(FileFolderAdmin, self).get_actions(request)
@@ -193,9 +193,10 @@ class SegmentationSigenAdmin(admin.ModelAdmin):
 
 
 class MicroscopeImageStackAdmin(admin.ModelAdmin):
-    fields = ('label', 'filefolder', 'microscope', 'lense', 'zoom', 'laser_color', 'gain', 'laser_config',
-        ('voxel_size_x', 'voxel_size_y', 'voxel_size_z'),
-        )
+    fields = ['label', 'filefolder', 'microscope', 'lense', 'zoom', 'laser_color', 'gain', 'laser_config',]
+        # ('voxel_size_x', 'voxel_size_y', 'voxel_size_z')]
+    list_display = ('digitalneuronrepresentation_ptr_id')#, 'microscope', 'uuid', 'mtime', 'ctime')
+    # list_display = ['label', 'microscope', 'uuid', 'mtime', 'ctime']
     inlines = [NeuronsDNRInline]
 
 
@@ -203,4 +204,4 @@ class MicroscopeImageStackAdmin(admin.ModelAdmin):
 admin.site.register(Segmentation, SegmentationAdmin)
 admin.site.register(SegmentationSigen, SegmentationSigenAdmin)
 admin.site.register(Microscope, MicroscopeAdmin)
-admin.site.register(MicroscopeImageStack, MicroscopeImageStackAdmin)
+admin.site.register(MicroscopeImageStack)#, MicroscopeImageStackAdmin)
