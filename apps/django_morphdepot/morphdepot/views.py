@@ -27,6 +27,7 @@ def add_filefolder(request):#file_list):
     file_list.sort(key=str) #PR: sort list by file names
     new_file_folder = FileFolder(label=form_fields['label'])
     new_file_folder.save() #PR; save to generate uuid
+    print "new_file_folder.uuid: ", new_file_folder.uuid
 
     folder_sha1 = hashlib.sha1()
     for form_file in file_list:#request.FILES.getlist('form_files'):

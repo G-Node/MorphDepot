@@ -1,23 +1,31 @@
 import hashlib, os
 
 from django.db import models
-from django_extensions.db.fields import UUIDField
 from django.core.files.storage import default_storage
 from django.conf import settings
 
 import utils
 
+# ******************** UUID ****************************
 """
 Short UUID-Doku:
 http://david.feinzeig.com/blog/2012/03/01/how-to-add-a-uuid-field-in-django-using-django-extensions-and-how-to-make-it-a-read-only-admin-field/
 """
+# from django_extensions.db.fields import UUIDField
+# Broken, see: https://github.com/django-extensions/django-extensions/issues/282
+import uuid
+def make_uuid():
+    return str(uuid.uuid4())
+
+# ***************End - UUID *****************************
 
 #######################
 # MorphDepot - Metadata
 #######################
 
 class Identity(models.Model):
-    uuid = UUIDField(primary_key=True, version=4) #Not editable with Django.admin
+    # uuid = UUIDField(primary_key=True, version=4) #Not editable with Django.admin
+    uuid = models.CharField(max_length=36, primary_key=True, default=make_uuid)
     ctime = models.DateTimeField('created', auto_now_add=True, blank=False) # Not editable with Django.admin (auto_now_add=True!)
     mtime = models.DateTimeField('modified', auto_now=True, blank=False)    # Not editable with Django.admin (auto_now=True!)
     comment = models.TextField(default="", blank=True)
@@ -45,6 +53,13 @@ class Scientist(Identity):
     middle_name = models.CharField(max_length=64, blank=True)
     title = models.CharField(max_length=16, blank=True)
     affiliations = models.CharField(max_length=128, blank=True)
+
+    def save(self, *args, **kwargs): # Replace by Signal!
+        print "self.uuid: ", self.uuid
+        print "self.mtime", self.mtime
+        super(Scientist, self).save(*args, **kwargs)
+        print "self.uuid: ", self.uuid
+        print "self.mtime", self.mtime
 
     def __unicode__(self):
         return self.fullname
@@ -120,15 +135,6 @@ class FileFolder(Identity):
     checksum = models.CharField(max_length=64, default="automatically set on save") #TODO: implement with function-call on update
     path = models.CharField(max_length=256, default="automatically set on save")
 
-    def save(self, *args, **kwargs): # Replace by Signal!
-        super(FileFolder, self).save(*args, **kwargs)
-        hash = hashlib.sha1()
-        for file in self.uploadedfile_set.all():
-            hash.update(file.checksum)
-        self.checksum = hash.hexdigest()
-        self.path = os.path.join(utils.ROOT_FILEFOLDERS, self.uuid)
-        super(FileFolder, self).save(*args, **kwargs)
-
     def delete(self, *args, **kwargs):
         for file in self.uploadedfile_set.all():
             file.delete()
@@ -191,13 +197,26 @@ class UploadedFile(models.Model):
 # Signals
 # Example: http://lightbird.net/dbe/forum3.html
 from django.db.models.signals import post_save
+"""
+def save_filefolder(sender, **kwargs):
+    file_folder = kwargs["instance"]
+    hash = hashlib.sha1()
+    for file in file_folder.uploadedfile_set.all():
+        hash.update(file.checksum)
+    file_folder.checksum = hash.hexdigest()
+
+    print "self.uuid: ", file_folder.uuid
+    print "self.mtime: ", file_folder.mtime
+    file_folder.path = os.path.join(utils.ROOT_FILEFOLDERS, file_folder.uuid)
+    # super(FileFolder, file_folder).save()
+"""
 
 def update_filefolder(sender, **kwargs):
     file = kwargs["instance"]
     file.filefolder.save()
 
 post_save.connect(update_filefolder, sender=UploadedFile)
-
+# post_save.connect(save_filefolder, sender=FileFolder)
 
 # Raw data classes
 
