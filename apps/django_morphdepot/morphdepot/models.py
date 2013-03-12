@@ -14,7 +14,7 @@ http://david.feinzeig.com/blog/2012/03/01/how-to-add-a-uuid-field-in-django-usin
 from django_extensions.db.fields import UUIDField
 # Broken, see: https://github.com/django-extensions/django-extensions/issues/282
 # import uuid as uuid_package # to avoid confusion with attribute `uuid`
-from uuid import uuid4
+from uuid_type import uuid4
 
 def make_uuid():
     return str(uuid4())
