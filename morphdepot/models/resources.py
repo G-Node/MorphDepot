@@ -74,7 +74,42 @@ class Scientist(Resource):
     middle_name = sa.Column(sa.String(64))
     last_name = sa.Column(sa.String(64), nullable=False)
     title = sa.Column(sa.String(64))
-    affiliations = sa.Column(sa.String(128), nullable=False)
+    affiliations = sa.Column(sa.String(128))
+
+    @staticmethod
+    def caption2name(caption):
+        """
+        Format rule: LASTNAME__FIRSTNAME
+
+        Examples
+        ========
+
+        caption2name("Mayer_Huber__Max")
+        --> {"last_name":  "Mayer Huber",
+             "first_name": "Max"}
+        """
+        try:
+            ln, fn = caption.split("__")
+            last_name = ln.replace("_", " ")
+            first_name = fn.replace("_", " ")
+        except e:
+            print e
+        return {'last_name': last_name, 'first_name': first_name}
+
+    @property
+    def caption(self):
+        caption = "%s %s" %(self.last_name, self.first_name)
+        return caption.replace(" ", "__")
+
+    @caption.setter
+    def caption(self, value):
+
+        try:
+            ln, fn = value.split("__")
+            self.last_name = ln.replace("_", " ")
+            self.first_name = ln.replace("_", " ")
+        except e:
+            print e
 
 
 # Helper Class for Animal
@@ -145,7 +180,15 @@ class Neuron(Resource):
     __tablename__ = 'neurons'
     __mapper_args__ = {'polymorphic_identity': 'Neuron'}
     uuid = sa.Column(sa.ForeignKey('resources.uuid'), primary_key=True)
+    tissue_sample_uuid = sa.Column(sa.ForeignKey('tissue_samples.uuid'))
     label = sa.Column(sa.String(64), unique=True)
+
+    # Property
+    tissue_sample = orm.relationship(
+        "TissueSample",
+        primaryjoin=(tissue_sample_uuid == TissueSample.uuid),
+        backref="neurons",
+        )
 
 
 ################
@@ -268,7 +311,7 @@ equipment_dnr_maps = sa.Table(
 
 class Equipment(Resource):
     __tablename__ = "equipments"
-    __mapper_args__ = {'polymorphic_identity': 'Scientist'}
+    __mapper_args__ = {'polymorphic_identity': 'Equipment'}
     uuid = sa.Column(sa.ForeignKey('resources.uuid'), primary_key=True)
     label = sa.Column(sa.String(64), unique=True)
 
