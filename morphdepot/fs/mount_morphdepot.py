@@ -13,15 +13,14 @@ import fuse
 import os
 import time
 
-
-import MorphDepotFSdb as fusqldb
-import fusqlogger
+import logger
 import common
+from morphdepot.fs import db
 
 fuse.fuse_python_api = (0, 2)
 
 class Metadata(fuse.Stat):
-    @fusqlogger.log()
+    @logger.log()
     def __init__(self, mode, isDir):
         fuse.Stat.__init__(self)
 
@@ -41,10 +40,11 @@ class Metadata(fuse.Stat):
         self.st_size  = 0
 
 class FuSQL(fuse.Fuse):
-    @fusqlogger.log()
-    def __init__(self, *args, **kw):
-        fuse.Fuse.__init__(self, *args, **kw)
-        self.db = fusqldb.FusqlDb('sqlite:////home/philipp/Sandkasten/MorphDepot/test.sqlite')
+    @logger.log()
+    def __init__(self, db): #, *args, **kw):
+        fuse.Fuse.__init__(self)#, *args, **kw)
+        self.db = db
+        # self.db = db.FusqlDb('sqlite:////home/philipp/Sandkasten/MorphDepot/test.sqlite')
 
         root_mode = S_IRUSR|S_IXUSR|S_IWUSR|S_IRGRP|S_IXGRP|S_IXOTH|S_IROTH
         file_mode = S_IRUSR|S_IWUSR|S_IRGRP|S_IROTH
@@ -77,7 +77,7 @@ class FuSQL(fuse.Fuse):
 
                     self.paths.append(column_path)
 
-    @fusqlogger.log(showReturn=True)
+    @logger.log(showReturn=True)
     def mkdir(self, path, mode):
         spath = path.split("/")
 
@@ -128,7 +128,31 @@ class FuSQL(fuse.Fuse):
 
         return 0
 
+    @logger.log()
+    def getattr(self, path):
+        spath = path.split("/")
 
+        is_dir = len(spath) != 4
+
+        if path in self.paths:
+            if is_dir:
+                result = self.dir_metadata
+            else:
+                table_name = spath[1]
+                row_id = 1#int(spath[2])
+                column_name = spath[3].rsplit(".", 1)[0]
+                data = "TTest-dAtaa" #self.db.get_element_data(table_name, column_name, row_id)
+                dat = "TTest-dat"#self.db.get_element_data(table_name, column_name, row_id)
+                my_data = "my_data"
+                print "file_metadata: ", self.file_metadata
+                # first: result represents the generic metadata
+                result = self.file_metadata
+                # now: specific metadata-attributes are set
+                result.st_size = len(my_data)
+        else:
+            result = -ENOENT
+
+        return result
 
     "Bis Hierher bearbeitet."
 
@@ -146,34 +170,14 @@ class FuSQL(fuse.Fuse):
 
 
 
-    @fusqlogger.log()
-    def getattr(self, path):
-        spath = path.split("/")
-
-        is_dir = len(spath) != 4
-
-        if path in self.paths:
-            if is_dir:
-                result = self.dir_metadata
-            else:
-                table_name = spath[1]
-                row_id = 1#int(spath[2])
-                column_name = spath[3].rsplit(".", 1)[0]
-                data = "Test-Data"#self.db.get_element_data(table_name, column_name, row_id)
-
-                result = self.file_metadata
-                result.st_size = len(data)
-        else:
-            result = -ENOENT
-
-        return result
 
 
-    @fusqlogger.log()
+
+    @logger.log()
     def open(self, path, flags):
         return 0
 
-    @fusqlogger.log()
+    @logger.log()
     def read(self, path, size, offset):
         spath = path.split("/")
         table_name = spath[1]
@@ -187,7 +191,7 @@ class FuSQL(fuse.Fuse):
 
         return result
 
-    @fusqlogger.log(showReturn=True)
+    @logger.log(showReturn=True)
     def mknod(self, path, mode, rdev):
         spath = path.split("/")
 
@@ -218,7 +222,7 @@ class FuSQL(fuse.Fuse):
 
         return 0
 
-    @fusqlogger.log(showReturn=True)
+    @logger.log(showReturn=True)
     def write(self, path, buf, offset, fh=None):
         spath = path.split("/")
 
@@ -240,7 +244,7 @@ class FuSQL(fuse.Fuse):
 
         return write_size
 
-    @fusqlogger.log()
+    @logger.log()
     def truncate(self, path, size, fh=None):
         spath = path.split("/")
 
@@ -260,11 +264,11 @@ class FuSQL(fuse.Fuse):
 
         return 0
 
-    @fusqlogger.log()
+    @logger.log()
     def unlink(self, path):
         return 0
 
-    @fusqlogger.log(showReturn=True)
+    @logger.log(showReturn=True)
     def rename(self, path_from, path_to):
         spath_from = path_from.split("/")
         spath_to = path_to.split("/")
@@ -299,19 +303,19 @@ class FuSQL(fuse.Fuse):
 
         return 0
 
-    @fusqlogger.log()
+    @logger.log()
     def chmod(self, path, mode):
         return 0
 
-    @fusqlogger.log()
+    @logger.log()
     def chown(self, path, uid, gid):
         return 0
 
-    @fusqlogger.log()
+    @logger.log()
     def utime(self, path, times):
         return 0
 
-    @fusqlogger.log(showReturn=True)
+    @logger.log(showReturn=True)
     def rmdir(self, path):
         spath = path.split("/")
         result = 0
@@ -343,7 +347,7 @@ class FuSQL(fuse.Fuse):
 
         return result
 
-    @fusqlogger.log()
+    @logger.log()
     def readdir(self, path, offset):
         result = ['.', '..']
 
@@ -361,13 +365,14 @@ class FuSQL(fuse.Fuse):
         for i in result:
                 yield fuse.Direntry(i)
 
-    @fusqlogger.log()
+    @logger.log()
     def release(self, path, fh=None):
         return 0
 
 if __name__ == '__main__':
 
-    fs = FuSQL()
+    db = db.FusqlDb('sqlite:////home/philipp/Sandkasten/MorphDepot/test.sqlite')
+    fs = FuSQL(db=db)
     fs.parse(errex=1)
     fs.main()
 

@@ -1,15 +1,21 @@
 __author__ = 'philipp'
 
+import datetime as dt
+import os
+from shutil import copy2
+
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
-
-import datetime as dt
-import sqlalchemy as sa
 from sqlalchemy.ext.associationproxy import association_proxy
 
 from base import Base
 from uuid_type import UUIDMixin
+from morphdepot import config
+from morphdepot.utils.filesystem import get_file_sha1
 
+"""
+The Model also reads and writes to the file system!
+"""
 
 ###############
 # RESTful World
@@ -39,6 +45,7 @@ class Tag(UUIDMixin, Base):
 
     def __init__(self, name):
         self.name = name
+
 
 class Resource(UUIDMixin, Base):
     __tablename__ = 'resources'
@@ -196,9 +203,22 @@ class Neuron(Resource):
 ################
 class FileSet(Resource):
     __tablename__ = 'file_sets'
+    __mapper_args__ = (
+        {'polymorphic_identity': 'FileSet'})
     uuid = sa.Column(sa.ForeignKey('resources.uuid'), primary_key=True)
     label = sa.Column(sa.String(256), unique=True)
     _checksum = sa.Column(sa.String(32))
+
+    @property
+    def root_path(self):
+        root_path = config['RAW_DATA_ROOT']
+        assert os.path.isdir(root_path), '%s does not exist!' %(root_path)
+        return root_path
+
+    @property
+    def abs_path(self):
+        import os
+        return os.path.join(self.root_path, unicode(self.uuid))
 
 
 class File(Resource):
@@ -206,19 +226,27 @@ class File(Resource):
     __mapper_args__ = (
         {'polymorphic_identity': 'File'})
     uuid = sa.Column(sa.ForeignKey('resources.uuid'), primary_key=True)
-    label = sa.Column(sa.String(256), unique=True)
-    file_set_uuid = sa.Column(sa.ForeignKey('file_sets.uuid'))
+    filename = sa.Column(sa.String(256))
+    file_set_uuid = sa.Column(sa.ForeignKey('file_sets.uuid'), nullable=False)
+    path_origin = sa.Column(sa.Unicode)
     _filesize = sa.Column(sa.BigInteger)
     _checksum = sa.Column(sa.String(32))
     __table_args__ = (
         sa.CheckConstraint(_filesize >= 0, name='check_filesize_positive'),
+        sa.UniqueConstraint(filename, file_set_uuid),
         {})
+
 
     # Properties
     file_set = orm.relationship(
         "FileSet",
         primaryjoin=(file_set_uuid == FileSet.uuid),
         backref='files')
+
+    @property
+    def abs_path(self):
+        return os.path.join(self.file_set.abs_path, self.filename)
+
 
     @property
     def filesize(self):
@@ -336,3 +364,36 @@ class Sigen(Equipment):
     v_parameter = sa.Column(sa.Integer, nullable=False)
     c_parameter = sa.Column(sa.Integer, nullable=False)
     s_parameter = sa.Column(sa.Integer, nullable=False)
+
+
+########
+# Events
+########
+
+def set_file_attributes(mapper, connection, target):
+    file_abs_path = target.path_origin
+    print "file_abs_path: %s, file_set.abs_path: %s" %(file_abs_path, target.file_set.abs_path)
+    target.filename = os.path.basename(file_abs_path)
+    target._filesize = os.path.getsize(file_abs_path)
+    target._checksum = get_file_sha1(file_abs_path)
+    copy2(target.path_origin, target.file_set.abs_path)
+
+def adjust_checksum_file_set(mapper, connection, target):
+    """
+    hash = hashlib.sha1()
+    for file in self.uploadedfile_set.all():
+        hash.update(file.checksum)
+    self.checksum = hash.hexdigest()
+    self.path = os.path.join(utils.ROOT_FILEFOLDERS, self.uuid)
+    super(FileFolder, self).save(*args, **kwargs)
+    """
+    pass
+
+def create_file_set_folder(mapper, connection, target):
+    os.mkdir(target.abs_path)
+
+# def copy_file_to_fileset_location(mapper, connection, target):
+
+sa.event.listen(File, 'before_insert', set_file_attributes)
+sa.event.listen(FileSet, 'after_insert', create_file_set_folder)
+# sa.event.listen(File, 'after_insert')

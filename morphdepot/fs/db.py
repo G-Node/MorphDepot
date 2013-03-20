@@ -1,16 +1,10 @@
-# This program is free software. It comes without any warranty, to
-# the extent permitted by applicable law. You can redistribute it
-# and/or modify it under the terms of the Do What The Fuck You Want
-# To Public License, Version 2, as published by Sam Hocevar. See
-# http://sam.zoy.org/wtfpl/COPYING for more details. 
-
 import sqlalchemy as sa
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from morphdepot.models import resources
 from morphdepot.models import Base
 
-import fusqlogger
+import logger
 import common
 
 DBSession = scoped_session(sessionmaker())
@@ -18,19 +12,18 @@ DBSession = scoped_session(sessionmaker())
 
 class FusqlDb(object):
     '''Main api to control the database management'''
-    @fusqlogger.log()
-    def __init__(self, database_URL, echo=False):
+    @logger.log()
+    def __init__(self, database_URL, *args, **kwargs):
         self.engine = sa.create_engine(
             database_URL,
-            connect_args={'check_same_thread':False},
-            echo=echo,
+            **kwargs
             )
         DBSession.configure(bind=self.engine)
         Base.metadata.bind = self.engine
         Base.metadata.create_all(self.engine)
         self.session = DBSession()
 
-    @fusqlogger.log()
+    @logger.log()
     def get_scientist_captions(self):
         """
         Return captions of all scientists.
@@ -41,7 +34,7 @@ class FusqlDb(object):
             captions.append(scientist.caption)
         return captions
 
-    @fusqlogger.log()
+    @logger.log()
     def add_scientist(self, caption):
         """
         Return captions of all scientists.
@@ -70,9 +63,9 @@ class FusqlDb(object):
             self.connection.commit()
         
         if dump:
-            fusqlogger.dump(sql)
+            logger.dump(sql)
         
-    @fusqlogger.log()
+    @logger.log()
     def get_element_by_id(self, table_name, element_id):
         '''Returns all elements of table's
            row with a certain id'''
@@ -81,7 +74,7 @@ class FusqlDb(object):
         response = self.execute_sql(sql, False)
         return response.fetchone() 
 
-    @fusqlogger.log()
+    @logger.log()
     def get_all_elements(self, table_name):
         '''Returs all elements of a table'''
         
@@ -89,7 +82,7 @@ class FusqlDb(object):
         self.execute_sql(sql, False)
         return self.cursor.fetchall()
 
-    @fusqlogger.log()
+    @logger.log()
     def get_elements_by_field(self, field, table):
         '''Returns an specific field of a table'''
 
@@ -97,7 +90,7 @@ class FusqlDb(object):
         self.execute_sql(sql, False)
         return [x[0] for x in self.cursor]
 
-    @fusqlogger.log()
+    @logger.log()
     def get_tables(self):
         '''Returns a list with the names of 
            the database tables'''
@@ -110,7 +103,7 @@ class FusqlDb(object):
             result.append(element[0].encode("ascii"))
         return result
 
-    @fusqlogger.log()
+    @logger.log()
     def get_table_structure(self, table):
         '''Returns a list of tuples (name, type) with the
            table columns name and type'''
@@ -136,7 +129,7 @@ class FusqlDb(object):
 
         return result
 
-    @fusqlogger.log()
+    @logger.log()
     def get_element_ini_data(self, table_name, element_id):
         '''Returns ini formated string with all the
            table fields and data'''
@@ -156,7 +149,7 @@ class FusqlDb(object):
 
         return result
 
-    @fusqlogger.log()
+    @logger.log()
     def get_element_data(self, table_name, element_column, element_id):
         '''Returns the data of a cell'''
         
@@ -178,7 +171,7 @@ class FusqlDb(object):
 
         return result
     
-    @fusqlogger.log(True)
+    @logger.log(True)
     def set_element_data(self, table_name, column_name, element_id, value):
         '''Modifies a table field'''
         
@@ -189,7 +182,7 @@ class FusqlDb(object):
               % (table_name, column_name, value, element_id)
         self.execute_sql(sql, dump=False)
 
-    @fusqlogger.log()
+    @logger.log()
     def create_table(self, table_name):
         '''Creates a table with an id column'''
 
@@ -197,14 +190,14 @@ class FusqlDb(object):
         sql += "('id' INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL)"
         self.execute_sql(sql)
 
-    @fusqlogger.log()
+    @logger.log()
     def create_row(self, table_name, element_id):
         '''Creates a row in a table with an id'''
 
         sql = "INSERT INTO '%s' (id) VALUES (%d)" % (table_name, element_id)
         self.execute_sql(sql)
 
-    @fusqlogger.log()
+    @logger.log()
     def create_column(self, table_name, column_name, column_type):
         '''Creates a column in a table'''
 
@@ -212,28 +205,28 @@ class FusqlDb(object):
               (table_name, column_name, column_type)
         self.execute_sql(sql)
 
-    @fusqlogger.log()
+    @logger.log()
     def delete_table(self, table_name):
         '''Removes a table from the database'''
 
         sql = "DROP TABLE '%s'" % table_name
         self.execute_sql(sql)
 
-    @fusqlogger.log()
+    @logger.log()
     def rename_table(self, table_from, table_to):
         '''Renames a table'''
 
         sql = "ALTER TABLE '%s' RENAME TO '%s'" % (table_from, table_to)
         self.execute_sql(sql)
 
-    @fusqlogger.log()
+    @logger.log()
     def create_table_element(self, table_name, element_id):
         '''Creates a table element'''
 
         sql = "INSERT INTO '%s' (id) VALUES (%d)" % (table_name, element_id)
         self.execute_sql(sql)
 
-    @fusqlogger.log()
+    @logger.log()
     def delete_table_element(self, table_name, element_id):
         '''Removes an element of a table'''
 
