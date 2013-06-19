@@ -39,6 +39,8 @@ nosetests.xml
 #
 # PyCharm
 .idea/*
+*.iml
+
 # Sphinx
 doc/build/*
 *swp
