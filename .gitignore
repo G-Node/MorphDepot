@@ -44,3 +44,6 @@ nosetests.xml
 # Sphinx
 doc/build/*
 *swp
+
+# gedit
+*~
