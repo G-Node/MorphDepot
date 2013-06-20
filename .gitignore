@@ -40,6 +40,7 @@ nosetests.xml
 # PyCharm
 .idea/*
 *.iml
+*sqlite
 
 # Sphinx
 doc/build/*
