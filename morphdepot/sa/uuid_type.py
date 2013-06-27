@@ -5,7 +5,7 @@ source:
 """
 import sqlalchemy as sa
 from sqlalchemy.types import TypeDecorator, CHAR
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID as PG_UUID
 from sqlalchemy.ext.declarative import declared_attr
 import uuid as uuid_package
 
@@ -21,7 +21,7 @@ class UUID(TypeDecorator):
 
     def load_dialect_impl(self, dialect):
         if dialect.name == 'postgresql':
-            return dialect.type_descriptor(UUID())
+            return dialect.type_descriptor(PG_UUID())
         else:
             return dialect.type_descriptor(CHAR(32))
 
@@ -42,4 +42,3 @@ class UUID(TypeDecorator):
             return value
         else:
             return uuid_package.UUID(value)
-
