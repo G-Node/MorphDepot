@@ -1,6 +1,9 @@
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+LEVEL = logging.DEBUG
+LOGFILE = "morph.log"
+
+logging.basicConfig(level=LEVEL, filename=LOGFILE)
 
 
 def logged(func, level=logging.INFO):
@@ -11,9 +14,10 @@ def logged(func, level=logging.INFO):
             fqn += func.__module__ + "."
         if func.__class__ is not None:
             fqn += func.__class__.__name__ + "."
-        fqn += func.__name__ + "( " + repr(kwargs) + " )"
+        fqn += func.__name__ + "( " + repr(*args) + " )"
         logging.log(level, "going go call %s", fqn)
-        func(*args, **kwargs)
-        logging.log(level, "%s was called without errors", fqn)
+        result = func(*args, **kwargs)
+        logging.log(level, "result of %s was %s", fqn, str(result))
+        return result
 
     return wrap
