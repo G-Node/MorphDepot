@@ -126,7 +126,7 @@ class File(fuse.Direntry):
 
         :return: 0 on allow, -errno.EACCES otherwise.
         """
-        return -errno.EACCES
+        return 0
 
     def read(self, size=-1, offset=0):
         """
@@ -216,9 +216,11 @@ class Path(object):
         p = path
         if p[0] == "/":
             p = p[1: len(p)]
-        if p[-1] == "/":
+        if len(p) > 1 and p[-1] == "/":
             p = p[0: -1]
-        self.__path = p.split("/")
+        self.__path = [i for i in p.split("/") if i != ""]
+
+
 
     def __getitem__(self, index):
         """
@@ -243,7 +245,7 @@ class Path(object):
         return "/" + "/".join(self.__path)
 
     def __repr__(self):
-        return "<VPath: /" + "/".join(self.__path) + ">"
+        return "<Path: /" + "/".join(self.__path) + ">"
 
 
 class Stat(object):
