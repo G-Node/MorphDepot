@@ -10,7 +10,7 @@ import sqlalchemy as sa
 import sqlalchemy.orm as orm
 
 from morphdepot.sa.base import Base
-from morphdepot.sa.mixins import UUIDMixin, DimensionMixin
+from morphdepot.sa.mixins import UUIDMixin, IDMixin, DimensionMixin
 from interfaces import Identifiable
 
 
@@ -31,6 +31,8 @@ class Identity(UUIDMixin, Base, Identifiable):
 ############
 # Dimensions
 ############
+
+# Animal specific
 class AnimalSpecies(DimensionMixin, Base):
     __tablename__ = 'animal_species'
 
@@ -46,15 +48,28 @@ class LaborState(DimensionMixin, Base):
 class Colony(DimensionMixin, Base):
     __tablename__ = 'colonies'
 
+# Neuron specific
+class NeuronCategory(DimensionMixin, Base):
+    __tablename__ = 'neuron_categories'
+
+class Arborization_Area(DimensionMixin, Base):
+    __tablename__ = 'arborization_areas'
+
+class CellBodyRegion(DimensionMixin, Base):
+    __tablename__ = 'cell_body_regions'
+
+class Axonal_Tract(DimensionMixin, Base):
+    __tablename__ = 'axonal_tracts'
+
 
 ##############
 # Analog World
 ##############
 
-class Scientist(Identity):
+class Scientist(IDMixin, Identity):
     __tablename__ = "scientists"
     __mapper_args__ = {'polymorphic_identity': 'Scientist'}
-    id = sa.Column(sa.ForeignKey('identities.id'), primary_key=True)
+    # id = sa.Column(sa.ForeignKey('identities.id'), primary_key=True)
     first_name = sa.Column(sa.String(64), nullable=False)
     middle_name = sa.Column(sa.String(64))
     last_name = sa.Column(sa.String(64), nullable=False)
@@ -114,7 +129,7 @@ class TissueSample(Identity):
 
     # as backrefs:
     # --> neurons
-    # --> digital_neuro_representation
+    # --> neuro_representation
 
 
 ##################
@@ -125,32 +140,30 @@ class Neuron(Identity):
     __tablename__ = 'neurons'
     __mapper_args__ = {'polymorphic_identity': 'Neuron'}
     id = sa.Column(sa.ForeignKey('identities.id'), primary_key=True)
-    tissue_sample_id = sa.Column(sa.ForeignKey('tissue_samples.id'))
     label = sa.Column(sa.String(64), unique=True)
-
-    # Property
-    tissue_sample = orm.relationship(
-        "TissueSample",
-        primaryjoin=(tissue_sample_id == TissueSample.id),
-        backref="neurons",
-        )
+    comment = sa.Column(sa.Text)
+    # Dimensions:
+    neuron_category = sa.Column(sa.ForeignKey(NeuronCategory.name))
+    arborization_area = sa.Column(sa.ForeignKey(Arborization_Area.name))
+    cell_body_region = sa.Column(sa.ForeignKey(CellBodyRegion.name))
+    axonal_tract = sa.Column(sa.ForeignKey(Axonal_Tract.name))
 
 
 ################
 # Digital world:
 ################
 
-# Table to enable n:m-mapping fo Neuron and DigitalNeuroRepresentation
-neuron_dnr_maps = sa.Table(
-    'neuron_dnr_maps',
+# Table to enable n:m-mapping fo Neuron and NeuroRepresentation
+neuron_nr_maps = sa.Table(
+    'neuron_nr_maps',
     Base.metadata,
     sa.Column('neuron_id', sa.ForeignKey('neurons.id'), primary_key=True),
-    sa.Column('dnr_id', sa.ForeignKey('digital_neuro_representations.id'), primary_key=True))
+    sa.Column('nr_id', sa.ForeignKey('neuro_representations.id'), primary_key=True))
 
 
-class DigitalNeuroRepresentation(Identity):
-    __tablename__ = 'digital_neuro_representations'
-    __mapper_args__ = {'polymorphic_identity': 'DigitalNeuroRepresentation'}
+class NeuroRepresentation(Identity):
+    __tablename__ = 'neuro_representations'
+    __mapper_args__ = {'polymorphic_identity': 'NeuroRepresentation'}
     id = sa.Column(sa.ForeignKey('identities.id'), primary_key=True)
     tissue_sample_id = sa.Column(sa.ForeignKey('tissue_samples.id'), nullable=False)
     label = sa.Column(sa.String(64), unique=True)
@@ -159,8 +172,8 @@ class DigitalNeuroRepresentation(Identity):
     # References
     neurons = orm.relationship(
         "Neuron",
-        secondary=neuron_dnr_maps,
-        backref='digital_neuro_representations'
+        secondary=neuron_nr_maps,
+        backref='neuro_representations'
     )
 
     tissue_sample = orm.relationship(
@@ -181,7 +194,7 @@ class File(Identity):
         {'polymorphic_identity': 'File'})
     id = sa.Column(sa.ForeignKey('identities.id'), primary_key=True)
     label = sa.Column(sa.String(256), unique=True)
-    digital_neuro_representation_id = sa.Column(sa.ForeignKey('digital_neuro_representations.id'))
+    neuro_representation_id = sa.Column(sa.ForeignKey('neuro_representations.id'))
     _filesize = sa.Column(sa.BigInteger)
     _checksum = sa.Column(sa.String(32))
     __table_args__ = (
@@ -189,9 +202,9 @@ class File(Identity):
         {})
 
     # Properties
-    digital_neuro_representation = orm.relationship(
-        "DigitalNeuroRepresentation",
-        primaryjoin=(digital_neuro_representation_id == DigitalNeuroRepresentation.id),
+    neuro_representation = orm.relationship(
+        "NeuroRepresentation",
+        primaryjoin=(neuro_representation_id == NeuroRepresentation.id),
         backref='files')
 
     @property
@@ -222,6 +235,32 @@ class PreparatioCondition(Identity):
         backref='preparation_condition'
     )
 
+
+# Add On: Permission
+####################
+
+class Permisson(Base):
+    __tablename__ = "permissions"
+    id = sa.Column(sa.BigInteger, primary_key=True)
+    identity_id = sa.Column(sa.ForeignKey('identities.id'), unique=True)
+    oga = sa.Column(sa.String(9), nullable=False, default="rw-------")
+    user = sa.Column(sa.Integer, nullable=False)
+    group = sa.Column(sa.Integer, nullable=False)
+
+    def __init__(self, oga="rw-------", user=1, group=1):
+        self.oga = oga
+        self.user = user
+        self.group = group
+
+    # relationships
+    identity = orm.relationship(
+        "Identity",
+        backref=orm.backref('permission', uselist=False)
+    )
+
+# from sqlalchemy.ext.associationproxy import association_proxy
+#
+# Identity.oga = association_proxy('permission', 'oga')
 
 if __name__ == '__main__':
 
@@ -322,13 +361,17 @@ if __name__ == '__main__':
         neuron.tissue_sample = tissue
         session.commit()
 
-        # Add DigitalNeuroRepresentation
+        # Add NeuroRepresentation
         ################################
-        dnr = DigitalNeuroRepresentation(label='first file associated with a neuron')
-        dnr.tissue_sample = tissue
+        nr = NeuroRepresentation(label='first file associated with a neuron')
+        nr.tissue_sample = tissue
         session.commit()
         # --> the following causes an error using ":memory:"
-        # print("%s %s" %(neuron.id, dnr.id))
+        # print("%s %s" %(neuron.id, nr.id))
         # print("******************************************************************************")
-        # dnr.neurons.append(neuron)
+        # nr.neurons.append(neuron)
         # session.commit()
+
+        # Permission
+        animal.permission = Permisson()
+        print(animal.permission.oga)
