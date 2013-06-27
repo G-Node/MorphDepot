@@ -99,7 +99,7 @@ class File(fuse.Direntry):
 
         :return: A File object or -errno.EACCES
         """
-        return -errno.EACCES
+        return None
 
     def getattr(self):
         """
