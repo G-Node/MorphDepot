@@ -9,6 +9,7 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.ext.declarative import declared_attr
 import uuid as uuid_package
 
+
 class UUID(TypeDecorator):
     """Platform-independent UUID type.
 

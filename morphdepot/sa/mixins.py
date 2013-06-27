@@ -2,6 +2,7 @@ import sqlalchemy as sa
 import uuid as uuid_package
 from uuid_type import UUID
 
+
 class UUIDMixin(object):
     id = sa.Column('id', UUID, default=uuid_package.uuid4, primary_key=True)
 
