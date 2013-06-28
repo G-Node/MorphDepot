@@ -449,4 +449,3 @@ class Mode(object):
         if mode & stat.S_IXOTH:
             listmode[9] = "x"
         return "".join(listmode)
-

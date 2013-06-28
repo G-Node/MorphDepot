@@ -56,7 +56,7 @@ class DefaultFS(fuse.Fuse):
 
         The mountpoint is not stored in cmdline.
         """
-        return 0
+        pass
 
     @logged
     def fsdestroy(self):
@@ -64,7 +64,7 @@ class DefaultFS(fuse.Fuse):
         Will be called when the file system is about to be unmounted.
         It doesn't have to exist, or do anything.
         """
-        return 0
+        pass
 
     @logged
     def statfs(self):

@@ -3,9 +3,11 @@
 from __future__ import division, unicode_literals, print_function
 
 import errno
+import fuse
+import stat
+import time
 from log import logged
 from defaultfs import DefaultFS
-from fshelper import Path
 from fsmapping import RootDir
 
 
@@ -16,7 +18,7 @@ class MorphFS(DefaultFS):
 
     @logged
     def __init__(self, *args, **kwargs):
-        super(MorphFS, self).__init__(*args, **kwargs)
+        DefaultFS.__init__(self, *args, **kwargs)
         self.__root = RootDir()
 
     @property
@@ -30,5 +32,4 @@ class MorphFS(DefaultFS):
             return f.getattr()
         else:
             return -errno.ENOENT
-
 
