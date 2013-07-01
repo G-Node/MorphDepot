@@ -234,11 +234,6 @@ class File(Identity):
         backref=orm.backref('files', cascade="all,delete"))
 
     @property
-    def filesize(self):
-        return self._filesize
-    get_filesize = filesize
-
-    @property
     def checksum(self):
         return self._checksum
     get_checksum = checksum

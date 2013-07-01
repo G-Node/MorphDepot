@@ -37,7 +37,8 @@ if config.DB['add_test_data']:
         first_name="Philipp",
         middle_name="Lothar",
         last_name="Rautenberg",
-        affiliations=u"Ludwig-Maximilians-Universität München, Department Biology II, G-Node, Planegg-Martinsried, Germany")
+        affiliations= u"Ludwig-Maximilians-Universität München, Department Biology II, G-Node, Planegg-Martinsried, Germany"
+    )
 
     session.add(scientist)
     session.commit()
@@ -100,23 +101,19 @@ if config.DB['add_test_data']:
     # Add Neuron
     ############
     neuron = Neuron(label="my favorite neuron!")
-    session.add(neuron)
-    session.commit()
 
     # Add NeuroRepresentation
     ################################
     nr = NeuroRepresentation(label='first file associated with a neuron')
     nr.tissue_sample = tissue
     session.commit()
-    # --> the following causes an error using ":memory:"
-    print("%s %s" %(neuron.id, nr.id))
-    print("******************************************************************************")
     nr.neurons.append(neuron)
     session.commit()
 
     # File
     ######
-    nr.add_file("init_db.py")
+    file_object = nr.add_file("init_db.py")
+    print(file_object.st_size)
     session.commit()
 
     # Permission
