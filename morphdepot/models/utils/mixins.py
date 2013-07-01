@@ -1,7 +1,10 @@
+import uuid as uuid_package
+
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declared_attr
-import uuid as uuid_package
-from morphdepot.sa.uuid_type import UUID
+
+from morphdepot.models.utils.uuid_type import UUID
+
 
 class UUIDMixin(object):
     id = sa.Column('id', UUID, default=uuid_package.uuid4, primary_key=True)

@@ -3,7 +3,5 @@
 from __future__ import division, unicode_literals, print_function
 
 
-
-
 print('hello world')
 
