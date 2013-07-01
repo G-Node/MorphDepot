@@ -9,7 +9,7 @@ import errno
 from log import logged
 
 
-class DefaultFS(object):
+class DefaultFS(fuse.Fuse):
     """
     A default Fuse filesystem object. Implements methods which are called by the 
     Fuse system as a result of the operating system requesting filesystem
@@ -31,7 +31,7 @@ class DefaultFS(object):
     """
 
     @logged
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         """
         Creates a new TemplateFS object. Needs to call fuse.Fuse.__init__ with
         the args (just forward them along). Note that options passed to the
@@ -41,7 +41,7 @@ class DefaultFS(object):
         If parsing the command line argument fails, fsdestroy is called
         without prior calling fsinit.
         """
-        pass
+        super(DefaultFS, self).__init__(*args, **kwargs)
 
     @logged
     def fsinit(self):
@@ -56,7 +56,7 @@ class DefaultFS(object):
 
         The mountpoint is not stored in cmdline.
         """
-        return 0
+        pass
 
     @logged
     def fsdestroy(self):
@@ -64,7 +64,7 @@ class DefaultFS(object):
         Will be called when the file system is about to be unmounted.
         It doesn't have to exist, or do anything.
         """
-        return 0
+        pass
 
     @logged
     def statfs(self):

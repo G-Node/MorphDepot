@@ -52,3 +52,6 @@ doc/build/*
 
 # gedit
 *~
+
+mnt
+*.log
