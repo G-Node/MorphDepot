@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import morphdepot.config as config
 from morphdepot.models.core import *
-
+from morphdepot.models.morph import *
 ###########################
 # Setting up the DB-session
 ###########################
@@ -25,11 +25,11 @@ Session = orm.sessionmaker(bind=engine)
 Base.metadata.create_all(engine)
 session = Session()
 
-##################
-# Adding test data
-##################
-
 if config.DB['add_test_data']:
+
+    ########
+    # core #
+    ########
 
     # Add Scientist
     # #############
@@ -99,6 +99,11 @@ if config.DB['add_test_data']:
     tissue.experiment = experiment
     session.commit()
 
+    # Add Protocol
+    ##############
+    protocol = Protocol(label="protocol 1", description="did something")
+    tissue.protocols.append(protocol)
+
     # Add Neuron
     ############
     neuron = Neuron(label="my favorite neuron!")
@@ -120,4 +125,28 @@ if config.DB['add_test_data']:
     # Permission
     animal.permission = Permisson()
     print(animal.permission.oga)
+    session.commit()
+
+
+    #########
+    # morph #
+    #########
+    mi = MicroscopeImage(label="my first microscope image")
+    mis = MicroscopeImageStack(label="my first microscope image stack")
+
+    tissue.neuro_representations.append(mi)
+    tissue.neuro_representations.append(mis)
+    session.commit()
+
+    seg = Segmentation(label="my first segmentation")
+    seg.scientist = scientist
+    seg.microscope_image_stack = mis
+    seg.tissue_sample = tissue
+    session.commit()
+
+    # working with dimensions
+    session.add(Software(name="SIGEN"))
+    session.add(GeneralParam(name='Param1'))
+    seg.software = "SIGEN"
+    seg.general_param = "Param1"
     session.commit()
