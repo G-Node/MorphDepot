@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from morphdepot.models import Base
-from morphdepot.models.utils.mixins import DimensionMixin
+from morphdepot.models.utils.beanbags import DimensionMixin
 
 # Animal specific
 class AnimalSpecies(DimensionMixin, Base):

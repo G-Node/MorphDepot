@@ -5,40 +5,15 @@ import datetime as dt
 import os
 import hashlib
 import shutil
+import uuid as uuid_package
 
 import sqlalchemy as sa
 import sqlalchemy.orm as orm
 
-import uuid as uuid_package
-
 from morphdepot.models import Base
-from morphdepot.models.utils.mixins import UUIDMixin, IDMixin
-from morphdepot.models.interfaces import Identifiable
+from morphdepot.models.utils.beanbags import IDMixin, Identity
 from morphdepot.models.dimensions import *
-
 import morphdepot.config as config
-
-
-class Identity(UUIDMixin, Base, Identifiable):
-    __tablename__ = 'identities'
-    mtime = sa.Column(
-        'mtime',
-        sa.DateTime,
-        default=dt.datetime.now)
-    ctime = sa.Column(
-        'ctime',
-        sa.DateTime,
-        default=dt.datetime.now)
-    _dto_type = sa.Column('dto_type', sa.String, nullable=False)
-    __mapper_args__ = {'polymorphic_on': _dto_type}
-
-    @staticmethod
-    def update_mtime(mapper, connection, target):
-        target.mtime = dt.datetime.now()
-
-    @classmethod
-    def __declare_last__(cls):
-        sa.event.listen(cls, 'before_update', cls.update_mtime)
 
 
 ##############
