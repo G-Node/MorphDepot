@@ -45,3 +45,12 @@ class Software(DimensionMixin, Base):
 
 class GeneralParam(DimensionMixin, Base):
     __tablename__ = 'general_params'
+
+
+# ephys
+class ResponseProperty(DimensionMixin, Base):
+    __tablename__ = 'response_properties'
+
+
+class SpontaneousActivity(DimensionMixin, Base):
+    __tablename__ = 'spontaneous_activities'
