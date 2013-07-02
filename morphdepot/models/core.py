@@ -26,17 +26,18 @@ class Scientist(IDMixin, Identity):
     first_name = sa.Column(sa.String(64), nullable=False)
     middle_name = sa.Column(sa.String(64))
     last_name = sa.Column(sa.String(64), nullable=False)
-    title = sa.Column(sa.String(64))
+    title = sa.Column(sa.String(64), nullable=False, default="")
     affiliations = sa.Column(sa.String(128))
 
     def __str__(self):
-        return "%s %s %s, mtime: %s, ctime: %s" %(
-            self.first_name,
-            self.middle_name,
-            self.last_name,
-            self.mtime,
-            self.ctime,
-        )
+        if self.title != "":
+            return "%s, %s" %(self.first_name, self.last_name,)
+        else:
+            return "%s, %s (%s)" %(
+                self.first_name,
+                self.last_name,
+                self.title
+            )
 
 
 class Animal(Identity):
@@ -75,7 +76,7 @@ class TissueSample(Identity):
     experiment_id = sa.Column(sa.ForeignKey('experiments.id'), nullable=False)
     animal_id = sa.Column(sa.ForeignKey('animals.id'), unique=True)
 
-    # Properties
+    # References
     experiment = orm.relationship(
         "Experiment",
         primaryjoin=(experiment_id == Experiment.id),
@@ -86,6 +87,28 @@ class TissueSample(Identity):
         backref="tissue_samples",
         uselist=False)
 
+
+tissue_sample__protocol__maps = sa.Table(
+    'tissue_sample__protocol__maps',
+    Base.metadata,
+    sa.Column('tissue_sample_id', sa.ForeignKey('tissue_samples.id'), primary_key=True),
+    sa.Column('protocol_id', sa.ForeignKey('protocols.id'), primary_key=True))
+
+
+class Protocol(Identity):
+    __tablename__ = 'protocols'
+    __mapper_args__ = {'polymorphic_identity': 'Protocol'}
+    id = sa.Column(sa.ForeignKey('identities.id'), primary_key=True)
+    label = sa.Column(sa.String(64), unique=True)
+    description = sa.Column(sa.Text)
+    comment = sa.Column(sa.Text)
+
+    #References
+    tissue_samples = orm.relationship(
+        'TissueSample',
+        secondary=tissue_sample__protocol__maps,
+        backref='protocols'
+    )
 
 ##################
 # Conceptual World
@@ -140,7 +163,7 @@ class NeuroRepresentation(Identity):
     tissue_sample = orm.relationship(
         'TissueSample',
         primaryjoin=(tissue_sample_id == TissueSample.id),
-        backref="neuron_representations"
+        backref="neuro_representations"
     )
 
     @property

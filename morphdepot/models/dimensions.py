@@ -43,5 +43,5 @@ class Software(DimensionMixin, Base):
     __tablename__ = 'softwares'
 
 
-class General_Param(DimensionMixin, Base):
+class GeneralParam(DimensionMixin, Base):
     __tablename__ = 'general_params'
