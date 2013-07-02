@@ -20,6 +20,7 @@ class LaborState(DimensionMixin, Base):
 class Colony(DimensionMixin, Base):
     __tablename__ = 'colonies'
 
+
 # Neuron specific
 class NeuronCategory(DimensionMixin, Base):
     __tablename__ = 'neuron_categories'
@@ -35,3 +36,12 @@ class CellBodyRegion(DimensionMixin, Base):
 
 class Axonal_Tract(DimensionMixin, Base):
     __tablename__ = 'axonal_tracts'
+
+
+# morph
+class Software(DimensionMixin, Base):
+    __tablename__ = 'softwares'
+
+
+class General_Param(DimensionMixin, Base):
+    __tablename__ = 'general_params'

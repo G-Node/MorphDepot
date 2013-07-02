@@ -37,7 +37,8 @@ if config.DB['add_test_data']:
         first_name="Philipp",
         middle_name="Lothar",
         last_name="Rautenberg",
-        affiliations= u"Ludwig-Maximilians-Universität München, Department Biology II, G-Node, Planegg-Martinsried, Germany"
+        affiliations=\
+            "Ludwig-Maximilians-Universitaet Muenchen, Department Biology II, G-Node, Planegg-Martinsried, Germany"
     )
 
     session.add(scientist)

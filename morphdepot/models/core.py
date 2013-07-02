@@ -15,7 +15,6 @@ from morphdepot.models.utils.beanbags import IDMixin, Identity
 from morphdepot.models.dimensions import *
 import morphdepot.config as config
 
-
 ##############
 # Analog World
 ##############
@@ -153,16 +152,16 @@ class NeuroRepresentation(Identity):
         print("updating checksum")
         hash = hashlib.sha1()
         for file in self.files:
-            hash.update(file.checksum)
+            hash.update(file.checksum.encode('utf-8'))
         self._checksum = hash.hexdigest()
         print(self._checksum)
 
     def get_abs_path(self):
         return os.path.join(config.RAW_DATA['root_dir'], str(self.id))
 
-    def add_file(self, path_to_file):
-        file_name = os.path.basename(path_to_file)
-        stat = os.stat(path_to_file)
+    def add_file(self, path):
+        file_name = os.path.basename(path)
+        stat = os.stat(path)
         file_object = File(
             file_name = file_name,
             st_atime = dt.datetime.fromtimestamp(stat.st_atime),
@@ -173,7 +172,7 @@ class NeuroRepresentation(Identity):
         )
 
         self.files.append(file_object)
-        shutil.copy2(path_to_file, os.path.join(self.get_abs_path(), file_name))
+        shutil.copy2(path, os.path.join(self.get_abs_path(), file_name))
         file_object.update_checksum()
         return file_object
 
@@ -219,7 +218,7 @@ class File(Identity):
     def update_checksum(self):
         f = open(self.get_abs_path())
         hash = hashlib.sha1()
-        hash.update(f.read())
+        hash.update(f.read().encode('utf-8'))
         f.close()
         self._checksum = hash.hexdigest()
         self.neuro_representation.update_checksum()
