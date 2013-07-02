@@ -5,6 +5,8 @@ from __future__ import division, unicode_literals, print_function
 import fuse
 from morphdepot.morphfs import MorphFS
 
+print('hello world')
+
 fuse.fuse_python_api = (0, 2)
 
 usage = "usage"
