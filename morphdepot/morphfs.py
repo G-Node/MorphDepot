@@ -37,6 +37,12 @@ class MorphFS(DefaultFS):
             return -errno.ENOENT
 
     @logged
+    def opendir(self, path):
+        """ everything is accessible """
+        # TODO get permissions from the resolved object
+        return 0
+
+    @logged
     def readdir(self, path, offset, dh=None):
         f = self.root.resolve(path)
         if f is not None and f.is_dir():
