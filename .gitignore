@@ -1,8 +1,8 @@
 # MorphDepot
 raw_data/*
+morphdepot/config.py
 
-
-*.py[cod]
+*.y[cod]
 
 # C extensions
 *.so
