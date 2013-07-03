@@ -33,3 +33,5 @@ class MorphFS(DefaultFS):
         else:
             return -errno.ENOENT
 
+
+

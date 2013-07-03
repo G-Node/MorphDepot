@@ -107,7 +107,7 @@ class File(fuse.Direntry):
 
         :return: A stat object
         """
-        return Stat(st_mode=self.mode, st_size=len(self), st_gid=self.gid, st_uid=self.uid)
+        return Stat(st_mode=int(self.mode), st_size=len(self), st_gid=self.gid, st_uid=self.uid)
 
     def access(self, flags):
         """
@@ -197,7 +197,11 @@ class File(fuse.Direntry):
             return self.DIRSIZE
         else:
             data = self.read()
-            return data if type(data) == int else len(data)
+            if data == -errno.EOPNOTSUPP:
+                length = 0
+            else:
+                length = len(data)
+            return length
 
 
 class Path(object):
@@ -219,8 +223,6 @@ class Path(object):
         if len(p) > 1 and p[-1] == "/":
             p = p[0: -1]
         self.__path = [i for i in p.split("/") if i != ""]
-
-
 
     def __getitem__(self, index):
         """
@@ -248,7 +250,7 @@ class Path(object):
         return "<Path: /" + "/".join(self.__path) + ">"
 
 
-class Stat(object):
+class Stat(fuse.Stat):
     """
     Stat class with some comfort functions and useful defaults.
     """
@@ -286,28 +288,28 @@ class Stat(object):
         return 0
 
     @property
-    def st_atime(self):
-        return datetime.utcfromtimestamp(self.__st_atime)
+    def dt_atime(self):
+        return datetime.utcfromtimestamp(self.st_atime)
 
-    @st_atime.setter
-    def st_atime(self, time):
-        self.__st_atime = calendar.timegm(time.timetuple())
-
-    @property
-    def st_ctime(self):
-        return datetime.utcfromtimestamp(self.__st_ctime)
-
-    @st_ctime.setter
-    def st_ctime(self, time):
-        self.__st_ctime = calendar.timegm(time.timetuple())
+    @dt_atime.setter
+    def dt_atime(self, time):
+        self.st_atime = calendar.timegm(time.timetuple())
 
     @property
-    def st_mtime(self):
-        return datetime.utcfromtimestamp(self.__st_mtime)
+    def dt_ctime(self):
+        return datetime.utcfromtimestamp(self.st_ctime)
 
-    @st_mtime.setter
-    def st_mtime(self, time):
-        self.__st_mtime = calendar.timegm(time.timetuple())
+    @dt_ctime.setter
+    def dt_ctime(self, time):
+        self.st_ctime = calendar.timegm(time.timetuple())
+
+    @property
+    def dt_mtime(self):
+        return datetime.utcfromtimestamp(self.st_mtime)
+
+    @dt_mtime.setter
+    def dt_mtime(self, time):
+        self.st_mtime = calendar.timegm(time.timetuple())
 
 
 class Mode(object):
