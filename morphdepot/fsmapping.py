@@ -1,5 +1,6 @@
 import os
 
+import stat
 from fuse import Direntry
 from log import logged
 from fshelper import File, Path
@@ -8,7 +9,8 @@ from serializer import Serializer
 class RootDir(File):
 
     def __init__(self):
-        super(RootDir, self).__init__("/", "/")
+        mode = stat.S_IFDIR | 0755
+        super(RootDir, self).__init__(path="/", name="/", mode=mode)
 
     @logged
     def list(self):
@@ -27,8 +29,6 @@ class RootDir(File):
             if len(found) == 1:
                 result = found[0]
         return result
-
-
 
 class ModelResolver(object):
     """
@@ -73,6 +73,9 @@ class ModelResolver(object):
 
         return None
 
+#-------------------------------------------------------------------------------
+# FOLDERS
+#-------------------------------------------------------------------------------
 
 class ScientistDir(File, ModelResolver):
     """
@@ -113,6 +116,9 @@ class ExperimentDir(File, ModelResolver):
     def list(self):
         raise NotImplementedError
 
+#-------------------------------------------------------------------------------
+# FILES
+#-------------------------------------------------------------------------------
 
 class ModelInfo(File, ModelResolver):
     """

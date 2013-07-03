@@ -3,9 +3,6 @@
 from __future__ import division, unicode_literals, print_function
 
 import errno
-import fuse
-import stat
-import time
 from log import logged
 from defaultfs import DefaultFS
 from fsmapping import RootDir
@@ -32,4 +29,6 @@ class MorphFS(DefaultFS):
             return f.getattr()
         else:
             return -errno.ENOENT
+
+
 
