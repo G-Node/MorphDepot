@@ -2,13 +2,10 @@
 raw_data/*
 morphdepot/config.py
 
-*.y[cod]
+*.py[cod]
 
 # C extensions
 *.so
-
-# Compiled python modules
-*.pyc
 
 # Packages
 *.egg
