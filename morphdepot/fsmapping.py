@@ -5,35 +5,16 @@ from fuse import Direntry
 from log import logged
 from fshelper import File, Path
 from serializer import Serializer
+from models.core import Scientist, Experiment, TissueSample, Protocol, Neuron, File, Animal
 
-class RootDir(File):
-
-    def __init__(self):
-        mode = stat.S_IFDIR | 0755
-        super(RootDir, self).__init__(path="/", name="/", mode=mode)
-
-    @logged
-    def list(self):
-        return [Direntry("."), Direntry(".."), Direntry("scientists"),
-                Direntry("experiments"), Direntry("options")]
-
-    @logged
-    def resolve(self, path):
-        p = Path(str(path))
-        result = None
-        if len(p) == 0:
-            result = self
-        else:
-            name = p[0]
-            found = [f for f in self.list() if f.name == name]
-            if len(found) == 1:
-                result = found[0]
-        return result
+#-------------------------------------------------------------------------------
+# HELPER CLASSES
+#-------------------------------------------------------------------------------
 
 class ModelResolver(object):
     """
-    abstract class that implements initialization and a generic path resolution 
-    for virtual file system objects.
+    abstract class that implements initialization from an object for virtual 
+    files / folders.
     """
     def __init__(self, path, obj, *args, **kwargs):
         """
@@ -44,13 +25,13 @@ class ModelResolver(object):
         """
         self.model_instance = obj
 
-        if obj.__class__.__name__.lower() in ['scientist', 'experiment', \
-            'tissuesample', 'microscopeimage', 'microscopeimagestack', \ 
+        if obj.__class__.__name__.lower() in ['scientist', 'experiment',
+            'tissuesample', 'microscopeimage', 'microscopeimagestack', 
                 'segmentation']:
-            kwargs['mode'] = 'drwxr-xr-x'
+            kwargs['mode'] = stat.S_IFDIR | 0755
 
         else:
-            kwargs['mode'] = '-rwxr-xr-x'
+            kwargs['mode'] = stat.S_IFLNK | 0755
 
         # TODO add permissions resolution
 
@@ -58,6 +39,24 @@ class ModelResolver(object):
         name = obj.__str__()
 
         super(ModelResolver, self).__init__(path, name, *args, **kwargs)
+
+    def getattr(self):
+        kwargs = {}
+        kwargs['st_mode'] = int(self.mode)
+        kwargs['st_size'] = len(self)
+        kwargs['st_gid'] = self.gid
+        kwargs['st_uid'] = self.uid
+        kwargs['dt_mtime'] = self.model_instance.mtime
+        kwargs['dt_ctime'] = self.model_instance.ctime
+
+        return Stat( **kwargs )
+
+
+class PathResolver(object):
+    """
+    abstract class that implements generic path resolution for virtual file 
+    system objects.
+    """
 
     @logged
     def resolve(self, path):
@@ -73,11 +72,54 @@ class ModelResolver(object):
 
         return None
 
+
 #-------------------------------------------------------------------------------
-# FOLDERS
+# STATIC FOLDERS
 #-------------------------------------------------------------------------------
 
-class ScientistDir(File, ModelResolver):
+class RootDir(File, PathResolver):
+    """
+    It's a static root folder with 'scientists' folder inside.
+    """
+
+    def __init__(self, session):
+        self.session = session
+        mode = stat.S_IFDIR | 0755
+        super(RootDir, self).__init__(path="/", name="/", mode=mode)
+
+    @logged
+    def list(self):
+        return [Direntry("."), Direntry(".."), Scientists(self.session)]
+
+
+class Scientists(File, PathResolver):
+    """
+    It's a static folder in the root dir that contains all scientists.
+    """
+    def __init__(self, session):
+        self.session = session
+        mode = stat.S_IFDIR | 0755
+        super(Scientists, self).__init__(path="/scientists", name="scientists", mode=mode)
+
+    @logged
+    def list(self):
+        """
+        Scientists folder contains all registered scientists.
+
+        :return:        a list of scientist folders.
+        """
+        contents = []
+        for sct in self.session.query(Scientist):
+            contents.append(ScientistDir(self.path, sct))
+
+        return contents
+
+
+#-------------------------------------------------------------------------------
+# MODEL FOLDERS
+#-------------------------------------------------------------------------------
+
+class ScientistDir(ModelResolver, PathResolver, File):
     """
     Class represents a Scientist folder.
     """
@@ -86,14 +128,14 @@ class ScientistDir(File, ModelResolver):
     def list(self):
         """
         Scientist folder contains:
-        - information about the scientist
+        - information about the scientist as info.yaml
         - folders with all experiments, made by this scientist
 
         :return:        a list of files and folders.
         """
         contents = []
 
-        # 1. info.yaml with scientist attributes
+        # 1. info.yaml with attributes
         info = ModelInfo(self.path, self.model_instance)
         contents.append(info)
 
@@ -107,24 +149,48 @@ class ScientistDir(File, ModelResolver):
         return contents
 
 
-class ExperimentDir(File, ModelResolver):
+class ExperimentDir(ModelResolver, PathResolver, File):
     """
     Class represents an Experiment folder.
     """
 
     @logged
     def list(self):
-        raise NotImplementedError
+        """
+        Experiment folder contains:
+        - information about the experiment as info.yaml
+        - folders with all related tissue samples
+
+        :return:        a list of files and folders.
+        """
+        contents = []
+
+        # 1. info.yaml with attributes
+        info = ModelInfo(self.path, self.model_instance)
+        contents.append(info)
+
+        # 2. list of experiments
+        session = Session.object_session(self.model_instance)
+        objs = session.query(TissueSample).filter( \
+            TissueSample.experiment_id == self.model_instance.id)
+        for obj in objs:
+            contents.append(TissueSampleDir(self.path, obj))
+
+        return contents
 
 #-------------------------------------------------------------------------------
 # FILES
 #-------------------------------------------------------------------------------
 
-class ModelInfo(File, ModelResolver):
+class ModelInfo(ModelResolver, PathResolver, File):
     """
     Class represents a info.yaml file with properties of an instance of a 
     certain model.
     """
+    def __init__(self, path, obj, *args, **kwargs):
+        super(ModelInfo, self).__init__(path, obj, *args, **kwargs)
+        self.name = 'info.yaml'
+        self.path = os.path.join(path, self.name)
 
     def read(self):
         """
