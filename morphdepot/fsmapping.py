@@ -30,7 +30,7 @@ class RootDir(File):
 
 
 
-class PathResolver(object):
+class ModelResolver(object):
     """
     abstract class that implements initialization and a generic path resolution 
     for virtual file system objects.
@@ -57,7 +57,7 @@ class PathResolver(object):
         path = os.path.join(path, obj.__str__())
         name = obj.__str__()
 
-        super(PathResolver, self).__init__(path, name, *args, **kwargs)
+        super(ModelResolver, self).__init__(path, name, *args, **kwargs)
 
     @logged
     def resolve(self, path):
@@ -74,7 +74,10 @@ class PathResolver(object):
         return None
 
 
-class ScientistDir(File, PathResolver):
+class ScientistDir(File, ModelResolver):
+    """
+    Class represents a Scientist folder.
+    """
 
     @logged
     def list(self):
@@ -82,6 +85,8 @@ class ScientistDir(File, PathResolver):
         Scientist folder contains:
         - information about the scientist
         - folders with all experiments, made by this scientist
+
+        :return:        a list of files and folders.
         """
         contents = []
 
@@ -99,14 +104,17 @@ class ScientistDir(File, PathResolver):
         return contents
 
 
-class ExperimentDir(File, PathResolver):
+class ExperimentDir(File, ModelResolver):
+    """
+    Class represents an Experiment folder.
+    """
 
     @logged
     def list(self):
         raise NotImplementedError
 
 
-class ModelInfo(File, PathResolver):
+class ModelInfo(File, ModelResolver):
     """
     Class represents a info.yaml file with properties of an instance of a 
     certain model.
@@ -116,17 +124,28 @@ class ModelInfo(File, PathResolver):
         """
         Returns an attached object representation as YAML file (bytestring).
         """
-        return Serializer.serialize(self.model_instance)
+        return Serializer.serialize(self.model_instance) # binary?
 
     def write(self, buf):
         """
         Updates object information 
 
-        :param buf: The data to write.
-        :type buf: str
+        :param buf:     a YAML representation of an object.
+        :type buf:      str
 
-        :return: 0 on success or and negative error code.
+        :return:        0 on success or and negative error code.
         """
-        return -errno.EOPNOTSUPP
+        try:
+            new = Serializer.deserialize(self.model_instance.__class__, buf)
+            new.id = self.model_instance.id
+
+        except Exception, e:
+            return -1 # TODO find a way to handle expceptions better..
+
+        session = Session.object_session(self.model_instance)
+        session.merge(new)
+        session.commit() # needed?
+
+        return 0
 
 
