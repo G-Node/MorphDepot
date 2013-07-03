@@ -28,5 +28,3 @@ class RootDir(File):
             if len(found) == 1:
                 result = found[0]
         return result
-
-
