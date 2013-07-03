@@ -1,4 +1,5 @@
 
+import stat
 from fuse import Direntry
 from log import logged
 from fshelper import File, Path
@@ -7,7 +8,8 @@ from fshelper import File, Path
 class RootDir(File):
 
     def __init__(self):
-        super(RootDir, self).__init__("/", "/")
+        mode = stat.S_IFDIR | 0755
+        super(RootDir, self).__init__(path="/", name="/", mode=mode)
 
     @logged
     def list(self):
