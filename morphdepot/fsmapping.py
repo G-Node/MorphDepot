@@ -220,4 +220,3 @@ class ModelInfo(ModelResolver, PathResolver, File):
 
         return 0
 
-
