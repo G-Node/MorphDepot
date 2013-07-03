@@ -249,6 +249,10 @@ class Path(object):
     def __repr__(self):
         return "<Path: /" + "/".join(self.__path) + ">"
 
+    def last_element_name(self):
+        le = self[ len(self)-1 ]
+        return le.__str__().replace('/', '')
+
 
 class Stat(fuse.Stat):
     """

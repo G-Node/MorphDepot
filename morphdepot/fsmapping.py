@@ -3,7 +3,8 @@ import os
 import stat
 from fuse import Direntry
 from log import logged
-from fshelper import File, Path
+from fshelper import File as FuseFile
+from fshelper import Path as FusePath
 from serializer import Serializer
 from models.core import Scientist, Experiment, TissueSample, Protocol, Neuron, File, Animal
 
@@ -11,10 +12,9 @@ from models.core import Scientist, Experiment, TissueSample, Protocol, Neuron, F
 # HELPER CLASSES
 #-------------------------------------------------------------------------------
 
-class ModelResolver(object):
+class ModelFile(object):
     """
-    abstract class that implements initialization from an object for virtual 
-    files / folders.
+    abstract class that implements initialization from an object for files.
     """
     def __init__(self, path, obj, *args, **kwargs):
         """
@@ -25,12 +25,7 @@ class ModelResolver(object):
         """
         self.model_instance = obj
 
-        if obj.__class__.__name__.lower() in ['scientist', 'experiment',
-            'tissuesample', 'microscopeimage', 'microscopeimagestack', 
-                'segmentation']:
-            kwargs['mode'] = stat.S_IFDIR | 0755
-
-        else:
+        if not kwargs.has_key('mode'):
             kwargs['mode'] = stat.S_IFLNK | 0755
 
         # TODO add permissions resolution
@@ -38,7 +33,7 @@ class ModelResolver(object):
         path = os.path.join(path, obj.__str__())
         name = obj.__str__()
 
-        super(ModelResolver, self).__init__(path, name, *args, **kwargs)
+        super(ModelFile, self).__init__(path, name, *args, **kwargs)
 
     def getattr(self):
         kwargs = {}
@@ -52,6 +47,15 @@ class ModelResolver(object):
         return Stat( **kwargs )
 
 
+class ModelDir(object):
+    """
+    abstract class that implements initialization from an object for folders.
+    """
+    def __init__(self, *args, **kwargs):
+        kwargs['mode'] = stat.S_IFDIR | 0755
+        super(ModelDir, self).__init__(*args, **kwargs)
+
+
 class PathResolver(object):
     """
     abstract class that implements generic path resolution for virtual file 
@@ -60,15 +64,18 @@ class PathResolver(object):
 
     @logged
     def resolve(self, path):
-        p = Path(str(path))
+        p = FusePath(str(path))
         if len(p) == 0:
             return self
 
         else:
-            name = p[0]
+            name = p[0].last_element_name()
             found = [f for f in self.list() if f.name == name]
             if len(found) == 1:
-                return found[0].resolve("/" + "/".join( p[1:] ))
+                to_resolve = "/"
+                if len(p) > 1:
+                    to_resolve += "/".join( p[1:] )
+                return found[0].resolve(to_resolve)
 
         return None
 
@@ -77,7 +84,7 @@ class PathResolver(object):
 # STATIC FOLDERS
 #-------------------------------------------------------------------------------
 
-class RootDir(File, PathResolver):
+class RootDir(PathResolver, FuseFile):
     """
     It's a static root folder with 'scientists' folder inside.
     """
@@ -85,14 +92,14 @@ class RootDir(File, PathResolver):
     def __init__(self, session):
         self.session = session
         mode = stat.S_IFDIR | 0755
-        super(RootDir, self).__init__(path="/", name="/", mode=mode)
+        super(RootDir, self).__init__("/", name="/", mode=mode)
 
     @logged
     def list(self):
         return [Direntry("."), Direntry(".."), Scientists(self.session)]
 
 
-class Scientists(File, PathResolver):
+class Scientists(PathResolver, FuseFile):
     """
     It's a static folder in the root dir that contains all scientists.
     """
@@ -119,7 +126,7 @@ class Scientists(File, PathResolver):
 # MODEL FOLDERS
 #-------------------------------------------------------------------------------
 
-class ScientistDir(ModelResolver, PathResolver, File):
+class ScientistDir(ModelDir, PathResolver, FuseFile):
     """
     Class represents a Scientist folder.
     """
@@ -149,7 +156,7 @@ class ScientistDir(ModelResolver, PathResolver, File):
         return contents
 
 
-class ExperimentDir(ModelResolver, PathResolver, File):
+class ExperimentDir(ModelDir, PathResolver, FuseFile):
     """
     Class represents an Experiment folder.
     """
@@ -182,7 +189,7 @@ class ExperimentDir(ModelResolver, PathResolver, File):
 # FILES
 #-------------------------------------------------------------------------------
 
-class ModelInfo(ModelResolver, PathResolver, File):
+class ModelInfo(ModelFile, PathResolver, FuseFile):
     """
     Class represents a info.yaml file with properties of an instance of a 
     certain model.
