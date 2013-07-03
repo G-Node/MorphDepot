@@ -13,10 +13,10 @@ if config.DB['type'] == "sqlite":
     engine.execute("PRAGMA foreign_keys=ON")
 elif config.DB['type'] == "postgresql":
     print("preconfigure %s" %(config.DB['type']))
-    results = engine.execute("SHOW search_path;")
-    for result in results:
-        assert result[0] == config.DB['schema'], "search_path not set correctly"
-    results.close()
+    #results = engine.execute("SHOW search_path;")
+    #for result in results:
+    #    assert result[0] == config.DB['schema'], "search_path not set correctly"
+    #results.close()
     if config.DB['pg_recreate_schema']:
         engine.execute("DROP SCHEMA %s CASCADE;" %(config.DB['schema']))
         engine.execute("CREATE SCHEMA %s;" %(config.DB['schema']))
