@@ -6,6 +6,7 @@ from log import logged
 from fshelper import File, Path
 from serializer import Serializer
 
+
 class RootDir(File):
 
     def __init__(self):
@@ -29,6 +30,7 @@ class RootDir(File):
             if len(found) == 1:
                 result = found[0]
         return result
+
 
 class ModelResolver(object):
     """
@@ -77,6 +79,7 @@ class ModelResolver(object):
 # FOLDERS
 #-------------------------------------------------------------------------------
 
+
 class ScientistDir(File, ModelResolver):
     """
     Class represents a Scientist folder.
@@ -120,6 +123,7 @@ class ExperimentDir(File, ModelResolver):
 # FILES
 #-------------------------------------------------------------------------------
 
+
 class ModelInfo(File, ModelResolver):
     """
     Class represents a info.yaml file with properties of an instance of a 
@@ -153,5 +157,4 @@ class ModelInfo(File, ModelResolver):
         session.commit() # needed?
 
         return 0
-
 

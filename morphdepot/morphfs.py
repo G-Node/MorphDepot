@@ -3,7 +3,12 @@
 from __future__ import division, unicode_literals, print_function
 
 import errno
+import config
+import sqlalchemy
+import sqlalchemy.orm as orm
 from log import logged
+import models.morph
+from models.morph import Base
 from defaultfs import DefaultFS
 from fsmapping import RootDir
 
@@ -15,7 +20,8 @@ class MorphFS(DefaultFS):
 
     @logged
     def __init__(self, *args, **kwargs):
-        DefaultFS.__init__(self, *args, **kwargs)
+        super(MorphFS, self).__init__(*args, **kwargs)
+        s = self.init_session()
         self.__root = RootDir()
 
     @property
@@ -30,5 +36,31 @@ class MorphFS(DefaultFS):
         else:
             return -errno.ENOENT
 
+    @logged
+    def readdir(self, path, offset, dh=None):
+        f = self.root.resolve(path)
+        if f is not None and f.is_dir():
+            list = f.list()
+            for i in list:
+                yield i
 
+    @logged
+    def access(self, path, flags):
+        f = self.root.resolve(path)
+        if f is not None:
+            return f.access(flags)
+        else:
+            return -errno.ENOENT
 
+    @logged
+    def init_session(self):
+        engine = sqlalchemy.create_engine(config.DB['url'], echo=config.DB['echo'])
+        if config.DB['type'] == "sqlite":
+            engine.execute("PRAGMA foreign_keys=ON")
+        elif config.DB['type'] == "postgresql":
+            if config.DB['pg_recreate_schema']:
+                engine.execute("DROP SCHEMA %s CASCADE;" % (config.DB['schema']))
+                engine.execute("CREATE SCHEMA %s;" % (config.DB['schema']))
+        Session = orm.sessionmaker(bind=engine)
+        Base.metadata.create_all(engine)
+        return Session()
