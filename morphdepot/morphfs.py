@@ -40,8 +40,11 @@ class MorphFS(DefaultFS):
     def open(self, path, flags):
         f = self.root.resolve(path)
         if f is not None:
-            # TODO check permissions
-            return path
+            if f.is_file():
+                # TODO check permissions
+                return path
+            else:
+                return -errno.EOPNOTSUPP
         else:
             return -errno.ENOENT
 
@@ -49,8 +52,11 @@ class MorphFS(DefaultFS):
     def read(self, path, size, offset, fh=None):
         f = self.root.resolve(path)
         if f is not None:
-            # TODO check permissions
-            return f.read(size, offset)
+            if f.is_file():
+                # TODO check permissions
+                return f.read(size, offset)
+            else:
+                return -errno.EOPNOTSUPP
         else:
             return -errno.ENOENT
 
@@ -58,8 +64,11 @@ class MorphFS(DefaultFS):
     def write(self, path, buf, offset, fh=None):
         f = self.root.resolve(path)
         if f is not None:
-            # TODO check permissions
-            return f.write(buf, offset)
+            if f.is_file():
+                # TODO check permissions
+                return f.write(buf, offset)
+            else:
+                return -errno.EOPNOTSUPP
         else:
             return -errno.ENOENT
 
