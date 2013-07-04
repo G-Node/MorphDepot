@@ -5,8 +5,6 @@ Method(s) to serialize / reconstruct model objects from YAML structures.
 import yaml
 import sqlalchemy as sa
 
-from sqlalchemy.orm import class_mapper
-from sqlalchemy.orm.exc import NoResultFound
 
 class Serializer(object):
     """
@@ -29,13 +27,10 @@ class Serializer(object):
         for column in obj.__mapper__.columns:
             name = column.name
 
-            if yaml_obj.has_key(name) and \
-                self.is_deserializable(column):
-
+            if name in yaml_obj and cls.is_deserializable(column):
                 setattr(obj, name, yaml_obj[name])
 
         return obj
-
 
     @classmethod
     def serialize(cls, obj):
@@ -50,7 +45,7 @@ class Serializer(object):
 
         for column in obj.__mapper__.columns:
 
-            if self.is_serializable(column):
+            if cls.is_serializable(column):
                 # do not serialize reserved attributes. serialize only 
                 # string-based foreign keys, related to simple dimensions. 
                 # normally these are string-typed
@@ -61,16 +56,14 @@ class Serializer(object):
 
         return yaml.dump(yaml_obj)
 
-
     @classmethod
     def is_serializable(cls, column):
         """ with this method one can filter reserved columns """
         foreign_key = len(column.foreign_keys) > 0
 
-        if (foreign_key and not column.type.__class__ == sa.String):
+        if foreign_key and not column.type.__class__ == sa.String:
             return False
         return True
-
 
     @classmethod
     def is_deserializable(cls, column):
@@ -82,6 +75,3 @@ class Serializer(object):
             return False
 
         return True
-
-
-
