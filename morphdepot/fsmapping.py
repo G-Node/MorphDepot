@@ -31,8 +31,10 @@ class ModelFile(FuseFile):
 
         # TODO add permissions resolution
 
-        path = os.path.join(path, obj.__str__())
-        name = obj.__str__()
+        #path = os.path.join(path, obj.__str__())
+        #name = obj.__str__()
+        path = os.path.join(path, str(obj.id))
+        name = str(obj.id)
 
         super(ModelFile, self).__init__(path, name, *args, **kwargs)
 
@@ -52,9 +54,9 @@ class ModelDir(ModelFile):
     """
     abstract class that implements initialization from an object for folders.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, path, obj, *args, **kwargs):
         kwargs['mode'] = stat.S_IFDIR | 0755
-        super(ModelDir, self).__init__(*args, **kwargs)
+        super(ModelDir, self).__init__(path, obj, *args, **kwargs)
 
 
 #-------------------------------------------------------------------------------
@@ -92,9 +94,9 @@ class Scientists(FuseFile):
 
         :return:        a list of scientist folders.
         """
-        contents = []
+        contents = [Direntry("."), Direntry("..")]
         for sct in self.session.query(Scientist):
-            contents.append(ScientistDir(self.path, sct))
+            contents.append(ScientistDir(self.path.__str__(), sct))
 
         return contents
 
