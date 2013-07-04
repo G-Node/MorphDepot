@@ -12,9 +12,10 @@ import fuse
 import errno
 import calendar
 from datetime import datetime
+from log import logged
 
 
-class File(fuse.Direntry):
+class FuseFile(fuse.Direntry):
     """
     Class that represents the concept of a file. As in UNIX file systems
     a file can also represent a directory or link (other types are not supported
@@ -90,17 +91,24 @@ class File(fuse.Direntry):
     #
     # File methods
     #
+    @logged
     def resolve(self, path):
-        """
-        Resolve a path to a specific object in the subtree.
+        p = Path(str(path))
+        if len(p) == 0:
+            return self
 
-        :param path: The path to resolve.
-        :type path: Path|str
+        else:
+            name = p[0].last_element_name()
+            found = [f for f in self.list() if f.name == name]
+            if len(found) == 1:
+                to_resolve = "/"
+                if len(p) > 1:
+                    to_resolve += "/".join(p[1:])
+                return found[0].resolve(to_resolve)
 
-        :return: A File object or -errno.EACCES
-        """
         return None
 
+    @logged
     def getattr(self):
         """
         Return a stat object.
@@ -109,6 +117,7 @@ class File(fuse.Direntry):
         """
         return Stat(st_mode=int(self.mode), st_size=len(self), st_gid=self.gid, st_uid=self.uid)
 
+    @logged
     def access(self, flags):
         """
         Checks access permissions. Permissions are checked separately
@@ -128,6 +137,7 @@ class File(fuse.Direntry):
         """
         return 0
 
+    @logged
     def read(self, size=-1, offset=0):
         """
         Read the content of the file as bytestring.
@@ -142,6 +152,7 @@ class File(fuse.Direntry):
         """
         return -errno.EOPNOTSUPP
 
+    @logged
     def write(self, buf, offset=0):
         """
         Write data to the file.
@@ -155,6 +166,7 @@ class File(fuse.Direntry):
         """
         return -errno.EOPNOTSUPP
 
+    @logged
     def list(self):
         """
         If the file is a directory this method lists its content by returning
@@ -165,6 +177,7 @@ class File(fuse.Direntry):
         else:
             return -errno.EOPNOTSUPP
 
+    @logged
     def is_dir(self):
         """
         Checks if the file is a directory.
@@ -173,6 +186,7 @@ class File(fuse.Direntry):
         """
         return self.mode.is_dir()
 
+    @logged
     def is_file(self):
         """
         Checks if the file is a regular file.
@@ -181,6 +195,7 @@ class File(fuse.Direntry):
         """
         return self.mode.is_file()
 
+    @logged
     def is_link(self):
         """
         Checks if the file is a symlink.
@@ -189,6 +204,7 @@ class File(fuse.Direntry):
         """
         return self.mode.is_link()
 
+    @logged
     def __len__(self):
         """
         Determine the size of the file.
@@ -250,7 +266,7 @@ class Path(object):
         return "<Path: /" + "/".join(self.__path) + ">"
 
     def last_element_name(self):
-        le = self[ len(self)-1 ]
+        le = self[len(self) - 1]
         return le.__str__().replace('/', '')
 
 
