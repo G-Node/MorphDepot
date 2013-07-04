@@ -1,4 +1,7 @@
+from __future__ import division, unicode_literals, print_function
+
 import os
+import yaml
 
 from sqlalchemy.orm.session import Session
 
@@ -7,7 +10,7 @@ from fuse import Direntry
 from log import logged
 from fshelper import FuseFile, Path, Stat
 from serializer import Serializer
-from models.core import Scientist, Experiment, TissueSample, Protocol, Neuron, File, Animal
+from models.core import Scientist, Experiment, TissueSample, Protocol, Neuron, File, Animal, AnimalSpecies
 
 #-------------------------------------------------------------------------------
 # HELPER CLASSES
@@ -73,7 +76,8 @@ class RootDir(FuseFile):
 
     @logged
     def list(self):
-        return [Direntry("."), Direntry(".."), Scientists(self.session)]
+        return [Direntry("."), Direntry(".."), Scientists(self.session),
+                DimensionFile("/spec.yml", self.session, AnimalSpecies)]
 
 
 class Scientists(FuseFile):
@@ -203,4 +207,32 @@ class ModelInfo(ModelFile):
         session.commit() # needed?
 
         return 0
+
+
+class DimensionFile(FuseFile):
+
+    def __init__(self, path, session, dimension, name=None):
+        mode = stat.S_IFREG | 0755
+        super(DimensionFile, self).__init__(path=path, mode=mode, name=name)
+        self.__session = session
+        self.__dimension = dimension
+
+    @property
+    def dimension(self):
+        return self.__dimension
+
+    @property
+    def session(self):
+        return self.__session
+
+    def read(self, size=-1, offset=0):
+        dimlist = self.session.query(self.dimension).all()
+        dimdict = dict()
+        for d in dimlist:
+            dimdict[str(d.name)] = {str("description"): str(d.description), str("comment"): str(d.comment)}
+        return str(yaml.dump(dimdict))
+
+    def write(self, buf, offset=0):
+        # TODO implement
+        return len(buf)
 
