@@ -219,6 +219,12 @@ class FuseFile(fuse.Direntry):
                 length = len(data)
             return length
 
+    def __str__(self):
+        return str(self.path)
+
+    def __repr__(self):
+        return "%s(%s)" % (self.__class__.__name__, str(self.path))
+
 
 class Path(object):
     """
@@ -263,7 +269,7 @@ class Path(object):
         return "/" + "/".join(self.__path)
 
     def __repr__(self):
-        return "<Path: /" + "/".join(self.__path) + ">"
+        return "Path(%s)" % (str(self))
 
     def last_element_name(self):
         le = self[len(self) - 1]
@@ -331,6 +337,9 @@ class Stat(fuse.Stat):
     def dt_mtime(self, time):
         self.st_mtime = calendar.timegm(time.timetuple())
 
+    def __repr__(self):
+        return "Stat(st_mode=%s, st_uid=%i, st_gid=%i)" % (str(Mode(self.st_mode)), self.st_uid, self.st_gid)
+
 
 class Mode(object):
     """
@@ -384,6 +393,9 @@ class Mode(object):
 
     def __str__(self):
         return self.mode_to_string(self.__mode)
+
+    def __repr__(self):
+        return "Mode(%s)" % (str(self))
 
     #
     # static methods

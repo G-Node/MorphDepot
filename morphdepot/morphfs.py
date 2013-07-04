@@ -70,3 +70,6 @@ class MorphFS(DefaultFS):
         Session = orm.sessionmaker(bind=engine)
         Base.metadata.create_all(engine)
         return Session()
+
+    def __repr__(self):
+        return 'MorphFS()'
