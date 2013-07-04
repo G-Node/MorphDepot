@@ -18,14 +18,14 @@ def logged(func):
         return fnstr
 
     def wrap(*args, **kwargs):
+        fnstr = fnstringify(func, args)
         try:
+            logging.log(LEVEL, " --> calling %s", fnstr)
             result = func(*args, **kwargs)
-            fnstr = fnstringify(func, args)
-            logging.log(LEVEL, "Called %s => %s", fnstr, str(result))
+            logging.log(LEVEL, " <-- %s returned %s", fnstr, str(result))
+            return result
         except Exception as e:
-            fnstr = fnstringify(func, args)
-            logging.log(LEVEL, "Error while calling %s", fnstr)
+            logging.log(LEVEL, " Error while calling %s", fnstr)
             raise e
-        return result
 
     return wrap
