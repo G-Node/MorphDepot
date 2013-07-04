@@ -22,7 +22,7 @@ class MorphFS(DefaultFS):
     def __init__(self, *args, **kwargs):
         super(MorphFS, self).__init__(*args, **kwargs)
         s = self.init_session()
-        self.__root = RootDir()
+        self.__root = RootDir(s)
 
     @property
     def root(self):
@@ -35,6 +35,12 @@ class MorphFS(DefaultFS):
             return f.getattr()
         else:
             return -errno.ENOENT
+
+    @logged
+    def opendir(self, path):
+        """ everything is accessible """
+        # TODO get permissions from the resolved object
+        return 0
 
     @logged
     def readdir(self, path, offset, dh=None):
@@ -64,3 +70,6 @@ class MorphFS(DefaultFS):
         Session = orm.sessionmaker(bind=engine)
         Base.metadata.create_all(engine)
         return Session()
+
+    def __repr__(self):
+        return 'MorphFS()'
