@@ -16,6 +16,14 @@ class DimensionMixin(object):
     description = sa.Column('description', sa.String)
     comment = sa.Column('comment', sa.Text)
 
+    def __init__(self, name, description=None, comment=None):
+        """Dimension with following parameters:
+        :param name: string
+        :param description: string
+        :param comment: text
+        """
+        Base.__init__(self, name=name, description=description, comment=comment)
+
 
 class IDMixin(object):
     """

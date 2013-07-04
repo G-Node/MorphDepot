@@ -2,6 +2,7 @@
 import morphdepot.config as config
 from morphdepot.models.core import *
 from morphdepot.models.morph import *
+from morphdepot.models.ephys import *
 ###########################
 # Setting up the DB-session
 ###########################
@@ -37,6 +38,7 @@ if config.DB['add_test_data']:
         first_name="Philipp",
         middle_name="Lothar",
         last_name="Rautenberg",
+        author_notation="Philipp L. Rautenberg",
         affiliations=\
             "Ludwig-Maximilians-Universitaet Muenchen, Department Biology II, G-Node, Planegg-Martinsried, Germany"
     )
@@ -111,7 +113,8 @@ if config.DB['add_test_data']:
     # Add NeuroRepresentation
     ################################
     nr = NeuroRepresentation(label='first file associated with a neuron')
-    nr.tissue_sample = tissue
+    tissue.neuro_representations.append(nr)
+    # nr.tissue_sample = tissue
     session.commit()
     nr.neurons.append(neuron)
     session.commit()
@@ -146,7 +149,27 @@ if config.DB['add_test_data']:
 
     # working with dimensions
     session.add(Software(name="SIGEN"))
-    session.add(GeneralParam(name='Param1'))
+    session.commit()
+    param = GeneralParam(name='Param1')
     seg.software = "SIGEN"
-    seg.general_param = "Param1"
+    seg.general_params.append(param)
+    session.commit()
+
+    #########
+    # ephys #
+    #########
+    session.add(SpontaneousActivity(name="first spontaneous activity"))
+    response_property = ResponseProperty(name="first response Property")
+    session.add(response_property)
+    session.commit()
+
+    ephys = Electrophysiology(
+        label="my first electrophysiology",
+        spontaneous_activity='first spontaneous activity',
+        quality_rank=1,
+        stim_vibration_frequency=1.5,
+        tissue_sample=tissue,
+        response_properties=[response_property]
+    )
+    # tissue.neuro_representations.append(ephys)
     session.commit()
