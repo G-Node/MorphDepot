@@ -26,6 +26,7 @@ class Scientist(IDMixin, Identity):
     first_name = sa.Column(sa.String(64), nullable=False)
     middle_name = sa.Column(sa.String(64))
     last_name = sa.Column(sa.String(64), nullable=False)
+    author_notation = sa.Column(sa.String(64), nullable=False)
     title = sa.Column(sa.String(64), nullable=False, default="")
     affiliations = sa.Column(sa.String(128))
 

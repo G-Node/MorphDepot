@@ -38,6 +38,7 @@ if config.DB['add_test_data']:
         first_name="Philipp",
         middle_name="Lothar",
         last_name="Rautenberg",
+        author_notation="Philipp L. Rautenberg",
         affiliations=\
             "Ludwig-Maximilians-Universitaet Muenchen, Department Biology II, G-Node, Planegg-Martinsried, Germany"
     )
