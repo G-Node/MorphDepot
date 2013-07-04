@@ -37,6 +37,33 @@ class MorphFS(DefaultFS):
             return -errno.ENOENT
 
     @logged
+    def open(self, path, flags):
+        f = self.root.resolve(path)
+        if f is not None:
+            # TODO check permissions
+            return path
+        else:
+            return -errno.ENOENT
+
+    @logged
+    def read(self, path, size, offset, fh=None):
+        f = self.root.resolve(path)
+        if f is not None:
+            # TODO check permissions
+            return f.read(size, offset)
+        else:
+            return -errno.ENOENT
+
+    @logged
+    def write(self, path, buf, offset, fh=None):
+        f = self.root.resolve(path)
+        if f is not None:
+            # TODO check permissions
+            return f.write(buf, offset)
+        else:
+            return -errno.ENOENT
+
+    @logged
     def opendir(self, path):
         """ everything is accessible """
         # TODO get permissions from the resolved object
