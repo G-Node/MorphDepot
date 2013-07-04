@@ -27,14 +27,12 @@ class ModelFile(FuseFile):
         self.model_instance = obj
 
         if not kwargs.has_key('mode'):
-            kwargs['mode'] = stat.S_IFLNK | 0755
+            kwargs['mode'] = stat.S_IFREG | 0755
 
         # TODO add permissions resolution
 
-        #path = os.path.join(path, obj.__str__())
-        #name = obj.__str__()
-        path = os.path.join(path, str(obj.id))
-        name = str(obj.id)
+        name = str(obj.__str__())
+        path = os.path.join(path, name)
 
         super(ModelFile, self).__init__(path, name, *args, **kwargs)
 
@@ -122,15 +120,15 @@ class ScientistDir(ModelDir):
         contents = []
 
         # 1. info.yaml with attributes
-        info = ModelInfo(self.path, self.model_instance)
+        info = ModelInfo(self.path.__str__(), self.model_instance)
         contents.append(info)
 
         # 2. list of experiments
         session = Session.object_session(self.model_instance)
         experiments = session.query(Experiment).filter( \
-            Experiment.scientist_id == self.model_instance.id)
+            Experiment.scientist_id == str(self.model_instance.id))
         for exp in experiments:
-            contents.append(ExperimentDir(self.path, exp))
+            contents.append(ExperimentDir(self.path.__str__(), exp))
 
         return contents
 
@@ -152,7 +150,7 @@ class ExperimentDir(ModelDir):
         contents = []
 
         # 1. info.yaml with attributes
-        info = ModelInfo(self.path, self.model_instance)
+        info = ModelInfo(self.path.__str__(), self.model_instance)
         contents.append(info)
 
         # 2. list of experiments
@@ -160,7 +158,7 @@ class ExperimentDir(ModelDir):
         objs = session.query(TissueSample).filter( \
             TissueSample.experiment_id == self.model_instance.id)
         for obj in objs:
-            contents.append(TissueSampleDir(self.path, obj))
+            contents.append(TissueSampleDir(self.path.__str__(), obj))
 
         return contents
 

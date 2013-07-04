@@ -12,6 +12,7 @@ import sqlalchemy.orm as orm
 
 from morphdepot.models import Base
 from morphdepot.models.utils.beanbags import IDMixin, Identity
+from morphdepot.models.utils import cut_to_render
 from morphdepot.models.dimensions import *
 import morphdepot.config as config
 
@@ -30,7 +31,7 @@ class Scientist(IDMixin, Identity):
     affiliations = sa.Column(sa.String(128))
 
     def __str__(self):
-        if self.title != "":
+        if self.title == "":
             return "%s, %s" %(self.first_name, self.last_name,)
         else:
             return "%s, %s (%s)" %(
@@ -66,6 +67,11 @@ class Experiment(Identity):
         "Scientist",
         primaryjoin=(scientist_id == Scientist.id),
         backref="experiments")
+
+    def __str__(self):
+        name = "".join([self.date.strftime('%Y%m%d'), " ", str(self.label) or "no label"])
+        return cut_to_render(name)
+
 
 
 class TissueSample(Identity):
