@@ -12,8 +12,6 @@ from fshelper import FuseFile, Path, Stat
 from serializer import Serializer
 from models.core import Scientist, Experiment, TissueSample, Protocol, Neuron, File, Animal, AnimalSpecies
 
-from fsmaptmp import DimensionFile
-
 #-------------------------------------------------------------------------------
 # HELPER CLASSES
 #-------------------------------------------------------------------------------
