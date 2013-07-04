@@ -1,10 +1,11 @@
 import os
 
+from sqlalchemy.orm.session import Session
+
 import stat
 from fuse import Direntry
 from log import logged
-from fshelper import File as FuseFile
-from fshelper import Path as FusePath
+from fshelper import FuseFile, Path, Stat
 from serializer import Serializer
 from models.core import Scientist, Experiment, TissueSample, Protocol, Neuron, File, Animal
 
@@ -12,7 +13,7 @@ from models.core import Scientist, Experiment, TissueSample, Protocol, Neuron, F
 # HELPER CLASSES
 #-------------------------------------------------------------------------------
 
-class ModelFile(object):
+class ModelFile(FuseFile):
     """
     abstract class that implements initialization from an object for files.
     """
@@ -47,7 +48,7 @@ class ModelFile(object):
         return Stat( **kwargs )
 
 
-class ModelDir(object):
+class ModelDir(ModelFile):
     """
     abstract class that implements initialization from an object for folders.
     """
@@ -56,35 +57,11 @@ class ModelDir(object):
         super(ModelDir, self).__init__(*args, **kwargs)
 
 
-class PathResolver(object):
-    """
-    abstract class that implements generic path resolution for virtual file 
-    system objects.
-    """
-
-    @logged
-    def resolve(self, path):
-        p = FusePath(str(path))
-        if len(p) == 0:
-            return self
-
-        else:
-            name = p[0].last_element_name()
-            found = [f for f in self.list() if f.name == name]
-            if len(found) == 1:
-                to_resolve = "/"
-                if len(p) > 1:
-                    to_resolve += "/".join( p[1:] )
-                return found[0].resolve(to_resolve)
-
-        return None
-
-
 #-------------------------------------------------------------------------------
 # STATIC FOLDERS
 #-------------------------------------------------------------------------------
 
-class RootDir(PathResolver, FuseFile):
+class RootDir(FuseFile):
     """
     It's a static root folder with 'scientists' folder inside.
     """
@@ -99,7 +76,7 @@ class RootDir(PathResolver, FuseFile):
         return [Direntry("."), Direntry(".."), Scientists(self.session)]
 
 
-class Scientists(PathResolver, FuseFile):
+class Scientists(FuseFile):
     """
     It's a static folder in the root dir that contains all scientists.
     """
@@ -126,7 +103,7 @@ class Scientists(PathResolver, FuseFile):
 # MODEL FOLDERS
 #-------------------------------------------------------------------------------
 
-class ScientistDir(ModelDir, PathResolver, FuseFile):
+class ScientistDir(ModelDir):
     """
     Class represents a Scientist folder.
     """
@@ -156,7 +133,7 @@ class ScientistDir(ModelDir, PathResolver, FuseFile):
         return contents
 
 
-class ExperimentDir(ModelDir, PathResolver, FuseFile):
+class ExperimentDir(ModelDir):
     """
     Class represents an Experiment folder.
     """
@@ -189,7 +166,7 @@ class ExperimentDir(ModelDir, PathResolver, FuseFile):
 # FILES
 #-------------------------------------------------------------------------------
 
-class ModelInfo(ModelFile, PathResolver, FuseFile):
+class ModelInfo(ModelFile):
     """
     Class represents a info.yaml file with properties of an instance of a 
     certain model.
