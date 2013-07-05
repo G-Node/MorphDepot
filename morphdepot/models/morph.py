@@ -1,11 +1,11 @@
-# -*- coding: utf-8 -*-
-__author__ = 'Philipp Rautenberg'
+from __future__ import division, unicode_literals, print_function
 
 import sqlalchemy as sa
 from sqlalchemy import orm
 
 from morphdepot.models.core import NeuroRepresentation, Scientist
 from morphdepot.models.dimensions import *
+
 
 class MicroscopeImage(NeuroRepresentation):
     __tablename__ = 'microscope_images'
@@ -49,12 +49,13 @@ class Segmentation(NeuroRepresentation):
     scientist = orm.relationship(
         "Scientist",
         primaryjoin=(scientist_id == Scientist.id),
-        backref="segmentations")
+        backref="segmentations"
+    )
     microscope_image_stack = orm.relationship(
         'MicroscopeImageStack',
         primaryjoin=(microscope_image_stack_id == MicroscopeImageStack.id),
         backref='segmentation',
-        )
+    )
     general_params = orm.relationship(
         "GeneralParam",
         secondary=segmentation__general_param__maps,

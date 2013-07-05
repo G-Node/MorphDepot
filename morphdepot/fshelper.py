@@ -98,13 +98,14 @@ class FuseFile(fuse.Direntry):
             return self
 
         else:
-            name = p[0].last_element_name()
+            name = p.__list__()[0]
             found = [f for f in self.list() if f.name == name]
             if len(found) == 1:
-                to_resolve = "/"
-                if len(p) > 1:
-                    to_resolve += "/".join(p[1:])
-                return found[0].resolve(to_resolve)
+                if len(p) == 1:
+                    p = Path('/')
+                else:
+                    p = p[1:]
+                return found[0].resolve(p)
 
         return None
 
@@ -271,9 +272,8 @@ class Path(object):
     def __repr__(self):
         return "Path(%s)" % (str(self))
 
-    def last_element_name(self):
-        le = self[len(self) - 1]
-        return le.__str__().replace('/', '')
+    def __list__(self):
+        return list(self.__path)
 
 
 class Stat(fuse.Stat):

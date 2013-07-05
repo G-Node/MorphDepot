@@ -1,4 +1,4 @@
-from __future__ import division, unicode_literals, print_function
+#from __future__ import division, unicode_literals, print_function
 
 import os
 import yaml
@@ -30,12 +30,12 @@ class ModelFile(FuseFile):
         self.model_instance = obj
 
         if not kwargs.has_key('mode'):
-            kwargs['mode'] = stat.S_IFLNK | 0755
+            kwargs['mode'] = stat.S_IFREG | 0755
 
         # TODO add permissions resolution
 
-        path = os.path.join(path, obj.__str__())
-        name = obj.__str__()
+        name = str(obj.__str__())
+        path = os.path.join(path, name)
 
         super(ModelFile, self).__init__(path, name, *args, **kwargs)
 
@@ -55,9 +55,9 @@ class ModelDir(ModelFile):
     """
     abstract class that implements initialization from an object for folders.
     """
-    def __init__(self, *args, **kwargs):
+    def __init__(self, path, obj, *args, **kwargs):
         kwargs['mode'] = stat.S_IFDIR | 0755
-        super(ModelDir, self).__init__(*args, **kwargs)
+        super(ModelDir, self).__init__(path, obj, *args, **kwargs)
 
 
 #-------------------------------------------------------------------------------
@@ -96,9 +96,9 @@ class Scientists(FuseFile):
 
         :return:        a list of scientist folders.
         """
-        contents = []
+        contents = [Direntry("."), Direntry("..")]
         for sct in self.session.query(Scientist):
-            contents.append(ScientistDir(self.path, sct))
+            contents.append(ScientistDir(self.path.__str__(), sct))
 
         return contents
 
@@ -124,15 +124,15 @@ class ScientistDir(ModelDir):
         contents = []
 
         # 1. info.yaml with attributes
-        info = ModelInfo(self.path, self.model_instance)
+        info = ModelInfo(self.path.__str__(), self.model_instance)
         contents.append(info)
 
         # 2. list of experiments
         session = Session.object_session(self.model_instance)
         experiments = session.query(Experiment).filter( \
-            Experiment.scientist_id == self.model_instance.id)
+            Experiment.scientist_id == str(self.model_instance.id))
         for exp in experiments:
-            contents.append(ExperimentDir(self.path, exp))
+            contents.append(ExperimentDir(self.path.__str__(), exp))
 
         return contents
 
@@ -154,7 +154,7 @@ class ExperimentDir(ModelDir):
         contents = []
 
         # 1. info.yaml with attributes
-        info = ModelInfo(self.path, self.model_instance)
+        info = ModelInfo(self.path.__str__(), self.model_instance)
         contents.append(info)
 
         # 2. list of experiments
@@ -162,7 +162,7 @@ class ExperimentDir(ModelDir):
         objs = session.query(TissueSample).filter( \
             TissueSample.experiment_id == self.model_instance.id)
         for obj in objs:
-            contents.append(TissueSampleDir(self.path, obj))
+            contents.append(TissueSampleDir(self.path.__str__(), obj))
 
         return contents
 
