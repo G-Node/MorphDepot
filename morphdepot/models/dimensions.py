@@ -1,10 +1,11 @@
-#!/usr/bin/env python -3 -t
-# -*- coding: utf-8 -*-
+from __future__ import division, unicode_literals, print_function
 
 from morphdepot.models import Base
 from morphdepot.models.utils.beanbags import DimensionMixin
 
 # Animal specific
+
+
 class AnimalSpecies(DimensionMixin, Base):
     __tablename__ = 'animal_species'
 
