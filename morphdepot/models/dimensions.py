@@ -1,10 +1,11 @@
-#!/usr/bin/env python -3 -t
-# -*- coding: utf-8 -*-
+from __future__ import division, unicode_literals, print_function
 
 from morphdepot.models import Base
 from morphdepot.models.utils.beanbags import DimensionMixin
 
 # Animal specific
+
+
 class AnimalSpecies(DimensionMixin, Base):
     __tablename__ = 'animal_species'
 
@@ -26,7 +27,7 @@ class NeuronCategory(DimensionMixin, Base):
     __tablename__ = 'neuron_categories'
 
 
-class Arborization_Area(DimensionMixin, Base):
+class ArborizationArea(DimensionMixin, Base):
     __tablename__ = 'arborization_areas'
 
 
@@ -34,7 +35,7 @@ class CellBodyRegion(DimensionMixin, Base):
     __tablename__ = 'cell_body_regions'
 
 
-class Axonal_Tract(DimensionMixin, Base):
+class AxonalTract(DimensionMixin, Base):
     __tablename__ = 'axonal_tracts'
 
 
@@ -45,3 +46,12 @@ class Software(DimensionMixin, Base):
 
 class GeneralParam(DimensionMixin, Base):
     __tablename__ = 'general_params'
+
+
+# ephys
+class ResponseProperty(DimensionMixin, Base):
+    __tablename__ = 'response_properties'
+
+
+class SpontaneousActivity(DimensionMixin, Base):
+    __tablename__ = 'spontaneous_activities'

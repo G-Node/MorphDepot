@@ -1,5 +1,4 @@
-#!/usr/bin/env python -3 -t
-# -*- coding: utf-8 -*-
+from __future__ import division, unicode_literals, print_function
 
 import datetime as dt
 import os
@@ -16,6 +15,7 @@ from morphdepot.models.utils import cut_to_render
 from morphdepot.models.dimensions import *
 import morphdepot.config as config
 
+
 ##############
 # Analog World
 ##############
@@ -27,6 +27,7 @@ class Scientist(IDMixin, Identity):
     first_name = sa.Column(sa.String(64), nullable=False)
     middle_name = sa.Column(sa.String(64))
     last_name = sa.Column(sa.String(64), nullable=False)
+    author_notation = sa.Column(sa.String(64), nullable=False)
     title = sa.Column(sa.String(64), nullable=False, default="")
     affiliations = sa.Column(sa.String(128))
 
@@ -128,9 +129,9 @@ class Neuron(Identity):
     comment = sa.Column(sa.Text)
     # Dimensions:
     neuron_category = sa.Column(sa.ForeignKey(NeuronCategory.name))
-    arborization_area = sa.Column(sa.ForeignKey(Arborization_Area.name))
+    arborization_area = sa.Column(sa.ForeignKey(ArborizationArea.name))
     cell_body_region = sa.Column(sa.ForeignKey(CellBodyRegion.name))
-    axonal_tract = sa.Column(sa.ForeignKey(Axonal_Tract.name))
+    axonal_tract = sa.Column(sa.ForeignKey(AxonalTract.name))
 
 
 ################
@@ -192,12 +193,12 @@ class NeuroRepresentation(Identity):
         file_name = os.path.basename(path)
         stat = os.stat(path)
         file_object = File(
-            file_name = file_name,
-            st_atime = dt.datetime.fromtimestamp(stat.st_atime),
-            st_mtime = dt.datetime.fromtimestamp(stat.st_mtime),
-            st_ctime = dt.datetime.fromtimestamp(stat.st_ctime),
-            st_blksize = stat.st_blksize,
-            st_size = stat.st_size,
+            file_name=file_name,
+            st_atime=dt.datetime.fromtimestamp(stat.st_atime),
+            st_mtime=dt.datetime.fromtimestamp(stat.st_mtime),
+            st_ctime=dt.datetime.fromtimestamp(stat.st_ctime),
+            st_blksize=stat.st_blksize,
+            st_size=stat.st_size,
         )
 
         self.files.append(file_object)
