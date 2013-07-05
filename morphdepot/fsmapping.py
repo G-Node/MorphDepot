@@ -1,6 +1,7 @@
 #from __future__ import division, unicode_literals, print_function
 
 import os
+import errno
 import yaml
 
 from sqlalchemy.orm.session import Session
@@ -225,6 +226,7 @@ class DimensionFile(FuseFile):
     def session(self):
         return self.__session
 
+    @logged
     def read(self, size=-1, offset=0):
         dimlist = self.session.query(self.dimension).all()
         dimdict = dict()
@@ -232,7 +234,26 @@ class DimensionFile(FuseFile):
             dimdict[str(d.name)] = {str("description"): str(d.description), str("comment"): str(d.comment)}
         return str(yaml.dump(dimdict))
 
-    def write(self, buf, offset=0):
-        # TODO implement
-        return len(buf)
+    @logged
+    def write(self, buf):
+        ret = len(buf)
+
+        try:
+            old_dims = self.session.query(self.dimension).all()
+            dim_data = yaml.load()
+            new_dims = []
+            for d in dim_data:
+                dim = self.dimension(name=d, description=dim_data[d]["description"],
+                                     comment=dim_data[d]["comment"])
+                new_dims.append(dim)
+            for dim in old_dims:
+                self.session.delete(dim)
+            self.session.flush()
+            for dim in new_dims:
+                self.session.add(dim)
+            self.session.commit()
+        except RuntimeError as ex:
+            ret = -errno.EIO
+
+        return ret
 
