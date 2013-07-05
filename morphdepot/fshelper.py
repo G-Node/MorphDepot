@@ -3,7 +3,7 @@
 # implement virtual file systems.
 #
 
-from __future__ import division, unicode_literals, print_function
+from __future__ import division, print_function
 
 import os
 import re
@@ -25,15 +25,9 @@ class FuseFile(fuse.Direntry):
     # Directory default size (bytes)
     DIRSIZE = 4096
 
-    def __init__(self, path, name=None, mode=0755, uid=0, gid=0, typ=0, ino=0, offset=0):
+    def __init__(self, path, mode=0755, uid=0, gid=0, typ=0, ino=0, offset=0):
         self.path = path
-        if name is None:
-            n = str(self.path[-1])
-            n = n[1:len(n) - 1]
-            self.name = n
-        else:
-            self.name = name
-        self.mode = Mode(mode)
+        self.mode = mode
         self.uid = uid
         self.gid = gid
         self.type = typ
@@ -50,16 +44,20 @@ class FuseFile(fuse.Direntry):
 
     @path.setter
     def path(self, path):
-        self.__path = Path(str(path))
+        self.__path = Path(path)
 
     @property
     def name(self):
         """The files name"""
-        return self.__name
+        if len(self.path) < 1:
+            return "/"
+        else:
+            return list(self.path)[-1]
 
     @name.setter
     def name(self, name):
-        self.__name = name
+        if len(self.path) > 0 and "/" not in name:
+            self.__path[-1] = name
 
     @property
     def mode(self):
@@ -91,14 +89,13 @@ class FuseFile(fuse.Direntry):
     #
     # File methods
     #
-    @logged
     def resolve(self, path):
         p = Path(str(path))
         if len(p) == 0:
             return self
 
         else:
-            name = p.__list__()[0]
+            name = list(p)[0]
             found = [f for f in self.list() if f.name == name]
             if len(found) == 1:
                 if len(p) == 1:
@@ -205,7 +202,6 @@ class FuseFile(fuse.Direntry):
         """
         return self.mode.is_link()
 
-    @logged
     def __len__(self):
         """
         Determine the size of the file.
@@ -240,7 +236,7 @@ class Path(object):
         :param path: A path as a string.
         :type path: str|unicode
         """
-        p = path
+        p = str(path)
         if p[0] == "/":
             p = p[1: len(p)]
         if len(p) > 1 and p[-1] == "/":
@@ -263,6 +259,14 @@ class Path(object):
             selection = self.__path[index]
         return Path("/".join(selection))
 
+    def __setitem__(self, key, value):
+        self.__path[key] = value
+
+    def __add__(self, other):
+        list_self = list(self)
+        list_other = list(Path(other))
+        return Path("/".join(list_self + list_other))
+
     def __len__(self):
         return len(self.__path)
 
@@ -272,8 +276,8 @@ class Path(object):
     def __repr__(self):
         return "Path(%s)" % (str(self))
 
-    def __list__(self):
-        return list(self.__path)
+    def __iter__(self):
+        return iter(self.__path)
 
 
 class Stat(fuse.Stat):
