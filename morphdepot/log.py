@@ -12,7 +12,7 @@ def logged(func):
 
     def fnstringify(func, args):
         fnstr = func.__module__
-        if len(args) > 0 and "__class__" in dir(args[0]):
+        if len(args) > 0 and hasattr(args[0], '__class__'):
             fnstr = args[0].__class__.__name__
         fnstr += "." + func.__name__ + "(" + repr(args) + ")"
         return fnstr

@@ -483,7 +483,9 @@ class Mode(object):
         """
         listmode = list("----------")
         # file type
-        if mode & stat.S_IFLNK:
+        if mode & stat.S_IFREG:
+            listmode[0] = "-"
+        elif mode & stat.S_IFLNK:
             listmode[0] = "l"
         elif mode & stat.S_IFDIR:
             listmode[0] = "d"
