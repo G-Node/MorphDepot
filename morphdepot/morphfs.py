@@ -6,6 +6,7 @@ import errno
 import config
 import sqlalchemy
 import sqlalchemy.orm as orm
+import fuse
 from log import logged
 import models.morph
 from models.morph import Base
@@ -42,7 +43,7 @@ class MorphFS(DefaultFS):
         if f is not None:
             if f.is_file():
                 # TODO check permissions
-                return path
+                return fuse.FuseFileInfo(keep_cache=False)
             else:
                 return -errno.EOPNOTSUPP
         else:

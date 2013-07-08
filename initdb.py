@@ -123,6 +123,7 @@ def db_populate():
         # Add TissueSample
         ##################
         tissue = TissueSample(label="test-tissue")
+        tissue.animal = animal
         tissue.experiment = experiment
         session.commit()
 
@@ -146,7 +147,7 @@ def db_populate():
 
         # File
         ######
-        file_object = nr.add_file("init_db.py")
+        file_object = nr.add_file("initdb.py")
         print(file_object.st_size)
         session.commit()
 

@@ -45,14 +45,15 @@ class Serializer(object):
 
         for column in obj.__mapper__.columns:
 
-            if cls.is_serializable(column):
+            if not cls.is_serializable(column):
                 # do not serialize reserved attributes. serialize only 
                 # string-based foreign keys, related to simple dimensions. 
                 # normally these are string-typed
                 continue
 
             name = column.name
-            yaml_obj[name] = getattr(obj, name)
+            if hasattr(obj, name):
+                yaml_obj[name] = str(getattr(obj, name))
 
         return yaml.dump(yaml_obj)
 

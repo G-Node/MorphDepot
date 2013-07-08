@@ -53,6 +53,9 @@ class Animal(Identity):
     labor_state = sa.Column(sa.ForeignKey("labor_states.name"), nullable=False)
     colony = sa.Column(sa.ForeignKey('colonies.name'), nullable=False)
 
+    def __str__(self):
+        return self.label
+
 
 class Experiment(Identity):
     __tablename__ = "experiments"
@@ -74,7 +77,6 @@ class Experiment(Identity):
         return cut_to_render(name)
 
 
-
 class TissueSample(Identity):
     __tablename__ = 'tissue_samples'
     __mapper_args__ = {'polymorphic_identity': 'TissueSample'}
@@ -93,6 +95,9 @@ class TissueSample(Identity):
         primaryjoin=(animal_id == Animal.id),
         backref="tissue_samples",
         uselist=False)
+
+    def __str__(self):
+        return self.label
 
 
 tissue_sample__protocol__maps = sa.Table(
@@ -133,6 +138,8 @@ class Neuron(Identity):
     cell_body_region = sa.Column(sa.ForeignKey(CellBodyRegion.name))
     axonal_tract = sa.Column(sa.ForeignKey(AxonalTract.name))
 
+    def __str__(self):
+        return self.label
 
 ################
 # Digital world:
@@ -159,6 +166,9 @@ class NeuroRepresentation(Identity):
         self.update_checksum()
         self.id = uuid_package.uuid4()
         os.makedirs(self.get_abs_path())
+
+    def __str__(self):
+        return self.label
 
     # References
     neurons = orm.relationship(
@@ -236,6 +246,9 @@ class File(Identity):
         "NeuroRepresentation",
         primaryjoin=(neuro_representation_id == NeuroRepresentation.id),
         backref=orm.backref('files', cascade="all,delete"))
+
+    def __str__(self):
+        return self.file_name
 
     @property
     def checksum(self):

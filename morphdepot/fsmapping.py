@@ -12,6 +12,7 @@ from fshelper import FuseFile, Path, Stat
 from serializer import Serializer
 from models.core import Scientist, Experiment, TissueSample, Protocol, Neuron, File, Animal
 from models.morph import MicroscopeImage, MicroscopeImageStack, Segmentation
+from models.ephys import Electrophysiology
 from models.dimensions import AnimalSpecies
 
 #-------------------------------------------------------------------------------
@@ -188,8 +189,9 @@ class TissueSampleDir(ModelDir):
         # TODO info.yaml should contain link to the Protocol!
 
         # 2. animal.yaml with Animal description
-        info = AnimalInfo(self.path + 'animal.yaml', self.model_instance.animal)
-        contents.append(info)
+        if self.model_instance.animal:
+            animal = ModelInfo(self.path + 'animal.yaml', self.model_instance.animal)
+            contents.append(animal)
 
         # 3. 'neurons' folder with neuron descriptions
         info = Neurons(self.path + 'neurons', self.model_instance)
@@ -199,7 +201,8 @@ class TissueSampleDir(ModelDir):
         static_descriptor = {
             'images': MicroscopeImage,
             'image_stacks': MicroscopeImageStack,
-            'segmentations': Segmentation
+            'segmentations': Segmentation,
+            'electrophysiology': Electrophysiology
         }
         for staticname, cls in static_descriptor.items():
             staticdir = TSStaticDir(self.path + staticname, cls, self.model_instance)
@@ -223,7 +226,7 @@ class Neurons(ModelDir):
         contents = [Direntry("."), Direntry("..")]
         for nr in self.model_instance.neuro_representations:
             for neuron in nr.neurons:
-                contents.append(NeuronInfo(self.path + str(neuron), neuron))
+                contents.append(ModelInfo(self.path + str(neuron), neuron))
 
         return contents
 
@@ -250,7 +253,7 @@ class TSStaticDir(FuseFile):
         contents = [Direntry("."), Direntry("..")]
 
         session = Session.object_session(self.parent)
-        q = self.session.query(self.model)
+        q = session.query(self.model)
         for obj in q.filter(self.model.tissue_sample == self.parent):
             objdir = NeuroRepresentationDir(self.path + str(obj), obj)
             contents.append(objdir)
@@ -260,7 +263,7 @@ class TSStaticDir(FuseFile):
 
 class NeuroRepresentationDir(ModelDir):
     """
-    Class represents a generic NeuroRepresentation folder (can represent a 
+    Class represents a generic NeuroRepresentation folder. It can represent a 
     single Image, Image Stack, Segmentation, or Ephys dataset.
     """
     @logged
@@ -291,15 +294,29 @@ class NeuroRepresentationDir(ModelDir):
 #-------------------------------------------------------------------------------
 
 class NormalFile(ModelFile):
-    pass
+    """
+    Class represents a normal file system file behaviour, connected to the File
+    class from models.
+    """
 
+    def getattr(self):
+        kwargs = {}
+        kwargs['st_mode'] = int(self.mode)
+        kwargs['st_size'] = self.model_instance.st_size
+        kwargs['st_gid'] = self.gid
+        kwargs['st_uid'] = self.uid
+        kwargs['dt_mtime'] = self.model_instance.st_mtime
+        kwargs['dt_ctime'] = self.model_instance.st_ctime
 
-class AnimalInfo(ModelFile):
-    pass
+        return Stat( **kwargs )
 
-
-class NeuronInfo(ModelFile):
-    pass
+    def read(self):
+        """
+        Returns contents of the file from disk.
+        """
+        path = self.model_instance.get_abs_path()
+        with open(path, 'r') as f:
+            return f.read()
 
 
 class ModelInfo(ModelFile):
@@ -308,13 +325,13 @@ class ModelInfo(ModelFile):
     certain model.
     """
 
-    def read(self):
+    def read(self, size=-1, offset=0):
         """
         Returns an attached object representation as YAML file (bytestring).
         """
         return Serializer.serialize(self.model_instance) # binary?
 
-    def write(self, buf):
+    def write(self, buf, offset=0):
         """
         Updates object information 
 
@@ -362,7 +379,7 @@ class DimensionFile(FuseFile):
         return str(yaml.dump(dimdict))
 
     @logged
-    def write(self, buf):
+    def write(self, buf, offset=0):
         ret = len(buf)
 
         try:
