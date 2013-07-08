@@ -24,8 +24,30 @@ class FuseFile(fuse.Direntry):
 
     # Directory default size (bytes)
     DIRSIZE = 4096
+    # Defaults
+    DEFAULT_MODE = 0644 | stat.S_IFREG  # regular file -rw-r--r--
+    DEFAULT_UID = os.getuid()           # the user running the fs
+    DEFAULT_GID = os.getegid()          # the group of the user running the fs
 
-    def __init__(self, path, mode=0755, uid=0, gid=0, typ=0, ino=0, offset=0):
+    def __init__(self, path, mode=DEFAULT_MODE, uid=DEFAULT_UID, gid=DEFAULT_GID, typ=0, ino=0, offset=0):
+        """
+        Initializes a FuseFile object.
+
+        :param path: The full path (including name) of the file.
+        :type path: str|Path
+        :param mode: The file mode bit mask (default: DEFAULT_MODE).
+        :type mode: int|Mode
+        :param uid: The id of the owner of the file (default: DEFAULT_UID)
+        :type uid: int
+        :param gid: The id of the owning group of the file (default: DEFAULT_GID)
+        :type gid: int
+        :param typ: Type of the file (not set).
+        :type typ: int
+        :param ino: Directory inode number.
+        :type ino: int
+        :param offset: Only needed for stateful directory reading (not set).
+        :type offset: int
+        """
         self.path = path
         self.mode = mode
         self.uid = uid
