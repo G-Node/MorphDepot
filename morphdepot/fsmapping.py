@@ -341,7 +341,7 @@ class DimensionFile(FuseFile):
 
     def __init__(self, path, session, dimension, name=None):
         mode = stat.S_IFREG | 0755
-        super(DimensionFile, self).__init__(path=path, mode=mode, name=name)
+        super(DimensionFile, self).__init__(path, mode=mode)
         self.__session = session
         self.__dimension = dimension
 
