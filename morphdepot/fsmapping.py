@@ -12,6 +12,7 @@ from fshelper import FuseFile, Path, Stat
 from serializer import Serializer
 from models.core import Scientist, Experiment, TissueSample, Protocol, Neuron, File, Animal
 from models.morph import MicroscopeImage, MicroscopeImageStack, Segmentation
+from models.dimensions import AnimalSpecies
 
 #-------------------------------------------------------------------------------
 # HELPER CLASSES
