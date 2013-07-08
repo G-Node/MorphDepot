@@ -31,9 +31,6 @@ class ModelFile(FuseFile):
         """
         self.model_instance = obj
 
-        if not kwargs.has_key('mode'):
-            kwargs['mode'] = stat.S_IFREG | 0755
-
         # TODO add permissions resolution
 
         super(ModelFile, self).__init__(path, *args, **kwargs)
@@ -291,6 +288,10 @@ class NeuroRepresentationDir(ModelDir):
 #-------------------------------------------------------------------------------
 # FILES
 #-------------------------------------------------------------------------------
+
+class NormalFile(ModelFile):
+    pass
+
 
 class AnimalInfo(ModelFile):
     pass
