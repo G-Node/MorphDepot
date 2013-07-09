@@ -284,38 +284,39 @@ def db_populate():
 
         all_image_stacks = session.query(MicroscopeImageStack).order_by(MicroscopeImageStack.label).all()
 
-        #seg = Segmentation(label="my first segmentation")
-        #seg.scientist = scientist
-        #seg.microscope_image_stack = mis
-        #seg.tissue_sample = tissue
-        #session.commit()
+        seg = Segmentation(label="Segmentation AA")
+        seg.scientist = scientist
+        seg.microscope_image_stack = all_image_stacks[0]
+        seg.tissue_sample = all_tissues[0]
+        seg.add_file("initdb.py")
+        session.commit()
 
         # working with dimensions
-        #session.add(Software(name="SIGEN"))
-        #session.commit()
-        #param = GeneralParam(name='Param1')
-        #seg.software = "SIGEN"
-        #seg.general_params.append(param)
-        #session.commit()
+        session.add(Software(name="SIGEN"))
+        session.commit()
+        param = GeneralParam(name='Param1')
+        seg.software = "SIGEN"
+        seg.general_params.append(param)
+        session.commit()
 
         #########
         # ephys #
         #########
-        #session.add(SpontaneousActivity(name="first spontaneous activity"))
-        #response_property = ResponseProperty(name="first response Property")
-        #session.add(response_property)
-        #session.commit()
+        session.add(SpontaneousActivity(name="first spontaneous activity"))
+        rp = ResponseProperty(name="first response Property")
+        session.add(rp)
+        session.commit()
 
-        #ephys = Electrophysiology(
-        #    label="my first electrophysiology",
-        #    spontaneous_activity='first spontaneous activity',
-        #    quality_rank=1,
-        #    stim_vibration_frequency=1.5,
-        #    tissue_sample=tissue,
-        #    response_properties=[response_property]
-        #)
-        # tissue.neuro_representations.append(ephys)
-        #session.commit()
+        ephys = Electrophysiology(
+            label="my first electrophysiology",
+            spontaneous_activity='first spontaneous activity',
+            quality_rank=1,
+            stim_vibration_frequency=1.5,
+            tissue_sample=tissue,
+            response_properties=[rp]
+        )
+        ephys.tissue_sample = all_tissues[0]
+        session.commit()
 
 # Do things ...
 if __name__ == "__main__":
