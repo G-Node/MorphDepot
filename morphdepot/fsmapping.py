@@ -310,7 +310,7 @@ class NormalFile(ModelFile):
 
         return Stat( **kwargs )
 
-    def read(self):
+    def read(self, size=-1, offset=0):
         """
         Returns contents of the file from disk.
         """

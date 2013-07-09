@@ -41,7 +41,9 @@ class Serializer(object):
         :param obj:         python object to serialize
 
         """
-        yaml_obj = {}
+        yaml_obj = {"attributes": {}, "model": {}}
+
+        yaml_obj["model"]["name"] = obj.__class__.__name__
 
         for column in obj.__mapper__.columns:
 
@@ -53,13 +55,18 @@ class Serializer(object):
 
             name = column.name
             if hasattr(obj, name):
-                yaml_obj[name] = str(getattr(obj, name))
+                yaml_obj["attributes"][name] = str(getattr(obj, name))
 
         return yaml.dump(yaml_obj)
 
     @classmethod
     def is_serializable(cls, column):
         """ with this method one can filter reserved columns """
+        
+        # for the moment everything is serializable:
+        return True
+
+        # insert filters here if needed
         foreign_key = len(column.foreign_keys) > 0
 
         if foreign_key and not column.type.__class__ == sa.String:
