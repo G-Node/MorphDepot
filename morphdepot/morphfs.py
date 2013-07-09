@@ -43,7 +43,7 @@ class MorphFS(DefaultFS):
         if f is not None:
             if f.is_file():
                 # TODO check permissions
-                return fuse.FuseFileInfo(keep_cache=False)
+                return None
             else:
                 return -errno.EOPNOTSUPP
         else:
