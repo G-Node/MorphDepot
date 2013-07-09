@@ -3,6 +3,8 @@ raw_data/*
 morphdepot/config.py
 
 *.py[cod]
+morphdepot/config.py
+*~
 
 # C extensions
 *.so
