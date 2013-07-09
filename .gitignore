@@ -1,4 +1,6 @@
 *.py[cod]
+morphdepot/config.py
+*~
 
 # C extensions
 *.so
