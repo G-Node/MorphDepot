@@ -55,3 +55,8 @@ class ResponseProperty(DimensionMixin, Base):
 
 class SpontaneousActivity(DimensionMixin, Base):
     __tablename__ = 'spontaneous_activities'
+
+
+all_dimensions = [AnimalSpecies, Company, LaborState, Colony, NeuronCategory,\
+    ArborizationArea, CellBodyRegion, AxonalTract, Software, GeneralParam, \
+        ResponseProperty, SpontaneousActivity]

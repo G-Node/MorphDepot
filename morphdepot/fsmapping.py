@@ -13,7 +13,7 @@ from serializer import Serializer
 from models.core import Scientist, Experiment, TissueSample, Protocol, Neuron, File, Animal
 from models.morph import MicroscopeImage, MicroscopeImageStack, Segmentation
 from models.ephys import Electrophysiology
-from models.dimensions import AnimalSpecies
+from models.dimensions import AnimalSpecies, all_dimensions
 
 #-------------------------------------------------------------------------------
 # HELPER CLASSES
@@ -75,7 +75,7 @@ class RootDir(FuseFile):
     @logged
     def list(self):
         return [Direntry("."), Direntry(".."), Scientists(self.session),
-                DimensionFile("/spec.yml", self.session, AnimalSpecies)]
+                OptionsDir(self.session)]
 
 
 class Scientists(FuseFile):
@@ -100,6 +100,40 @@ class Scientists(FuseFile):
 
         return contents
 
+
+class OptionsDir(FuseFile):
+    """
+    It's a static folder in the root dir that contains all collections 
+    (dimensions), like neuron categories, species, software etc.
+    """
+    def __init__(self, session):
+        self.session = session
+        mode = stat.S_IFDIR | 0755
+        super(OptionsDir, self).__init__(path="/options", mode=mode)
+
+    @logged
+    def list(self):
+        """
+        Options folder contains all dimension-type collections.
+
+        :return:        a list of dimension-type files with available options.
+        """
+        contents = [Direntry("."), Direntry("..")]
+
+        for dim_cls in all_dimensions:
+            name = dim_cls.__name__.lower() + 's'
+
+            # a bit of right english syntax
+            if name.endswith('ys'):
+                name = name.replace('ys', 'ies')
+            name = name.replace('iess', 'ies')
+
+            name += '.yaml'
+
+            dim_file = DimensionFile(self.path + name, self.session, dim_cls)
+            contents.append(dim_file)
+
+        return contents
 
 #-------------------------------------------------------------------------------
 # MODEL FOLDERS
